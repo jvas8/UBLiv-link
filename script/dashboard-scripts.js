@@ -9,7 +9,7 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 let currentListingID = null; // To track the listing currently being edited
 let recentActivityContainer = null; // <-- FIXED: Declared here in the outer scope
 
-// --- NEW FUNCTION: Securely get the current authenticated user's ID ---
+// --- UPDATED FUNCTION: Get the proper landlord user_id ---
 async function getCurrentLandlordId() {
     // Get the current user from Supabase Auth
     const { data: { user } } = await supabase.auth.getUser();
@@ -19,8 +19,24 @@ async function getCurrentLandlordId() {
         return null;
     }
     
-    // We assume the listings.landlord_id is linked to the Supabase auth.user().id
-    return user.id; 
+    // Get the user_id from your users table that matches the auth_id
+    const { data: userRecord, error } = await supabase
+        .from('users')
+        .select('user_id, role')
+        .eq('auth_id', user.id)
+        .single();
+
+    if (error) {
+        console.error('Error fetching user record:', error);
+        return null;
+    }
+
+    if (!userRecord || userRecord.role !== 'landlord') {
+        console.error('User is not a landlord or not found in users table.');
+        return null;
+    }
+    
+    return userRecord.user_id; // This is what should go in listings.landlord_id
 }
 
 // dashboard-scripts.js (Place this function OUTSIDE of the DOMContentLoaded block)
@@ -43,6 +59,7 @@ function switchModule(targetId) {
         console.error(`[ERROR] Module with ID #${targetId} not found in HTML.`); // Log Error
     }
 }
+
 document.addEventListener('DOMContentLoaded', () => {
     // --- DOM Elements ---
     const navItems = document.querySelectorAll('.nav-item');
@@ -71,18 +88,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const editBedrooms = document.getElementById('edit-bedrooms');
     const editDescription = document.getElementById('edit-description');
     const editAvailability = document.getElementById('edit-availability');
-    // dashboard-scripts.js (Inside DOMContentLoaded, after existing references)
-
+    
     // --- NEW LISTING FORM ELEMENTS ---
     const newListingForm = document.getElementById('new-listing-form');
     const cancelNewListingBtn = document.getElementById('cancel-new-listing-btn');
     const newListingMessage = document.getElementById('new-listing-message');
     // ---------------------------------
 
-
     // --- Core UI Functions ---
 
-    
     function setActiveNav(element) {
         navItems.forEach(nav => nav.classList.remove('active'));
         if (element) {
@@ -201,7 +215,6 @@ document.addEventListener('DOMContentLoaded', () => {
         recentActivityContainer.innerHTML = activityHTML;
     }
 
-
     function renderListingsTable(listings) {
         listingsTableContainer.innerHTML = ''; 
 
@@ -257,7 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Fetch listing details and bedrooms/description
         const { data: listing, error: listingError } = await supabase
             .from('listings')
-            .select('name, price, property_details(description, bedrooms)') 
+            .select('name, price, availability, property_details(description, bedrooms)') 
             .eq('listing_id', listingID)
             .single();
 
@@ -507,7 +520,6 @@ document.addEventListener('DOMContentLoaded', () => {
             getLandlordListings();
         }, 1500);
     }
-    // dashboard-scripts.js (After handleEditListingSubmit or similar functions)
 
     // --- NEW FUNCTION: Handle New Listing Submission ---
     async function handleNewListingSubmit(e) {
@@ -528,50 +540,43 @@ document.addEventListener('DOMContentLoaded', () => {
         const address = form.address.value; 
         const propertyType = form.propertyType.value;
         const bedrooms = parseInt(form.bedrooms.value, 10);
-const price = parseFloat(form.price.value);
+        const price = parseFloat(form.price.value);
         const leaseTerm = form.leaseTerm.value;
         const description = form.description.value;
         // const photos = form.photos.files; // Stored for later photo logic
 
-        // 2. Insert into 'listings' table (The address serves as both 'name' and 'location')
-        const { data: listingData, error: listingError } = await supabase
-            .from('listings')
-            .insert({
-                landlord_id: landlordId,
-                name: address,      // Address used for listing name
-                location: address,  // Address used for location
-                price: price,
-                leasing: leaseTerm,
-                // availability defaults to true and verification_status to 'pending'
-            })
-            .select('listing_id') // Request the generated ID back
-            .single();
+        try {
+            // 2. Insert into 'listings' table (The address serves as both 'name' and 'location')
+            const { data: listingData, error: listingError } = await supabase
+                .from('listings')
+                .insert({
+                    landlord_id: landlordId,
+                    name: address,      // Address used for listing name
+                    location: address,  // Address used for location
+                    price: price,
+                    leasing: leaseTerm,
+                    availability: true,
+                    verification_status: 'pending'
+                })
+                .select('listing_id') // Request the generated ID back
+                .single();
 
-        if (listingError) {
-            console.error('Error creating new listing:', listingError);
-            newListingMessage.textContent = `Error creating listing: ${listingError.message}`;
-            newListingMessage.classList.add('error');
-            return;
-        }
+            if (listingError) throw listingError;
 
-        const newListingId = listingData.listing_id;
+            const newListingId = listingData.listing_id;
 
-        // 3. Insert into 'property_details' table using the new listing_id
-        const { error: detailsError } = await supabase
-            .from('property_details')
-            .insert({
-                listing_id: newListingId,
-                property_type: propertyType,
-                bedrooms: bedrooms,
-                description: description
-            });
-            
-        if (detailsError) {
-            console.error('Error adding property details:', detailsError);
-            // Inform the user, but the core listing is still technically created
-            newListingMessage.textContent = `Listing created, but failed to add details: ${detailsError.message}`;
-            newListingMessage.classList.add('error');
-        } else {
+            // 3. Insert into 'property_details' table using the new listing_id
+            const { error: detailsError } = await supabase
+                .from('property_details')
+                .insert({
+                    listing_id: newListingId,
+                    property_type: propertyType,
+                    bedrooms: bedrooms,
+                    description: description
+                });
+                
+            if (detailsError) throw detailsError;
+
             newListingMessage.textContent = 'Listing published successfully!';
             newListingMessage.classList.add('success');
 
@@ -581,9 +586,13 @@ const price = parseFloat(form.price.value);
                 switchModule('listings');
                 getLandlordListings();
             }, 2000);
+
+        } catch (error) {
+            console.error('Error creating new listing:', error);
+            newListingMessage.textContent = `Error creating listing: ${error.message}`;
+            newListingMessage.classList.add('error');
         }
     }
-
 
     // --- Event Listeners ---
 
@@ -654,7 +663,7 @@ const price = parseFloat(form.price.value);
         setActiveNav(listingsNav);
     });
     
-// The function called by the sidebar button
+    // The function called by the sidebar button
     window.openListingForm = function() {
         console.log("[DEBUG] 'Add New Listing' button clicked. Initiating switch."); // Log
         switchModule('add-listing'); 
@@ -663,6 +672,7 @@ const price = parseFloat(form.price.value);
             newListingMessage.textContent = ''; // Clear previous messages
         }
     };
+    
     // 4. Form Submit Listener for NEW LISTING FORM
     if (newListingForm) {
         newListingForm.addEventListener('submit', handleNewListingSubmit);
