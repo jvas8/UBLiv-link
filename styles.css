@@ -1044,6 +1044,46 @@ body {
     text-align: right;
 }
 
+/* Add this block to your styles.css file */
+
+.recent-activity-card {
+    border: 1px solid #e0e0e0;
+    border-left: 4px solid var(--accent-color);
+    padding: 12px 15px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    background-color: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.activity-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85em;
+    margin-bottom: 5px;
+}
+
+.activity-rating {
+    color: var(--accent-color);
+    font-weight: 700;
+}
+
+.activity-date {
+    color: #999;
+}
+
+.activity-listing {
+    font-size: 0.9em;
+    color: var(--text-color-dash);
+    margin-bottom: 5px;
+}
+
+.activity-excerpt {
+    font-size: 0.9em;
+    color: #666;
+    font-style: italic;
+}
 /* Additional Auth/Landing Page styles from the end of original styles.css */
 .auth-page {
   background: linear-gradient(135deg, var(--primary-color) 0%, #9B4DB3 100%);

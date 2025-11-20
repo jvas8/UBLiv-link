@@ -7,6 +7,7 @@ const supabaseAnonKey = "sb_publishable_RH8RsvrsYFiEeWdF-7BBJA_Zc-RDCDm";
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 let currentListingID = null; // To track the listing currently being edited
+let recentActivityContainer = null; // <-- FIXED: Declared here in the outer scope
 
 // --- NEW FUNCTION: Securely get the current authenticated user's ID ---
 async function getCurrentLandlordId() {
@@ -34,8 +35,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Containers for dynamic content
     const listingsTableContainer = document.getElementById('listings-table-container');
     const allFeedbackContainer = document.getElementById('all-feedback-container');
-    const statsGridContainer = document.getElementById('stats-grid-container'); // For Overview stats
+    const recentActivityContainer = document.getElementById('recent-activity-container'); // <-- THIS LINE IS ESSENTIAL
 
+    if (!recentActivityContainer) {
+        console.error("FATAL ERROR: The element with ID 'recent-activity-container' was not found. Please check landlordDASH.html.");
+        return; // Stop script execution if the container is missing
+    }
     // Listing Edit Form Elements
     const editForm = document.getElementById('edit-listing-form');
     const cancelEditBtn = document.getElementById('cancel-edit-btn');
@@ -72,21 +77,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Data Fetching and Rendering Functions ---
 
     async function getLandlordListings() {
-        // 1. Get the current landlord's ID
         const landlordId = await getCurrentLandlordId();
 
         if (!landlordId) {
-            // Display a message if the user is not logged in or ID is missing
             listingsTableContainer.innerHTML = `<p class="error-message">You must be logged in to view listings.</p>`;
             document.getElementById('overview-stat-active-listings').textContent = 'N/A';
             return [];
         }
         
-        // FETCH FIX: Using correct columns and filtering by the landlord_id
+        // FETCH FIX: Including a join on 'reviews' to calculate stats directly
         const { data: listings, error } = await supabase
             .from('listings')
-            .select('listing_id, name, price, availability, property_details(bedrooms)')
-            .eq('landlord_id', landlordId); // <--- CRITICAL FILTER
+            .select('listing_id, name, price, availability, property_details(bedrooms), reviews(rating)')
+            .eq('landlord_id', landlordId);
 
         if (error) {
             console.error('Error fetching listings:', error);
@@ -94,28 +97,97 @@ document.addEventListener('DOMContentLoaded', () => {
             return [];
         }
 
-        renderListingsTable(listings);
-        updateOverviewStats(listings);
-        return listings;
+        // Calculate stats for each listing
+        const listingsWithStats = listings.map(listing => {
+            const totalReviews = listing.reviews.length;
+            const avgRating = totalReviews > 0 
+                ? (listing.reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews).toFixed(1) 
+                : null;
+            return {
+                ...listing,
+                totalReviews,
+                avgRating: avgRating // null if no reviews
+            };
+        });
+
+        renderListingsTable(listingsWithStats);
+        updateOverviewStats(listingsWithStats);
+        return listingsWithStats;
     }
 
     function updateOverviewStats(listings) {
-        // Using 'availability' instead of 'is_available'
         const activeListings = listings.filter(l => l.availability).length; 
         
-        // NOTE: total_reviews and avg_rating are NOT in your listings table, 
-        // so these stats will currently display placeholder data or N/A.
-        const totalReviews = 0; // listings.reduce((sum, l) => sum + (l.total_reviews || 0), 0);
-        const avgRating = 'N/A'; // listings.length > 0 ? (listings.reduce((sum, l) => sum + (l.avg_rating || 0), 0) / listings.length).toFixed(1) : 'N/A';
+        const allReviews = listings.flatMap(l => l.reviews || []);
+        const totalReviews = allReviews.length;
+        
+        const avgRating = totalReviews > 0 
+            ? (allReviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews).toFixed(1) 
+            : 'N/A';
 
         document.getElementById('overview-stat-active-listings').textContent = activeListings;
         document.getElementById('overview-stat-total-reviews').textContent = totalReviews;
         document.getElementById('overview-stat-avg-rating').textContent = avgRating;
+        
+        // Load recent activity after stats are calculated
+        renderRecentActivity();
+    }
+    
+    // --- NEW FUNCTION: Render Recent Activity on Overview Page ---
+    async function renderRecentActivity() {
+        const landlordId = await getCurrentLandlordId();
+        recentActivityContainer.innerHTML = '<p>Loading recent activity...</p>';
+        
+        if (!landlordId) {
+            recentActivityContainer.innerHTML = '<p class="error-message">Cannot load activity: User not logged in.</p>';
+            return;
+        }
+
+        // Fetch top 5 most recent reviews for listings owned by this landlord
+        // SCHEMA FIX: Use 'description' and join 'listings(name)'
+        const { data: reviews, error } = await supabase
+            .from('reviews')
+            .select('rating, description, created_at, listings(name, landlord_id)')
+            .eq('listings.landlord_id', landlordId) // Filter by landlord ID using the joined table
+            .order('created_at', { ascending: false })
+            .limit(5);
+
+        if (error) {
+            console.error('Error fetching recent activity:', error);
+            recentActivityContainer.innerHTML = `<p class="error-message">Error loading recent activity: ${error.message}</p>`;
+            return;
+        }
+
+        if (!reviews || reviews.length === 0) {
+            recentActivityContainer.innerHTML = '<p>No recent activity to display.</p>';
+            return;
+        }
+
+        const activityHTML = reviews.map(review => {
+            const date = new Date(review.created_at).toLocaleDateString();
+            const ratingText = '★'.repeat(Math.round(review.rating));
+            const address = review.listings.name || 'Unknown Address';
+
+            return `
+                <div class="recent-activity-card">
+                    <div class="activity-header">
+                        <span class="activity-rating">${ratingText} (${review.rating}/5)</span>
+                        <span class="activity-date">${date}</span>
+                    </div>
+                    <p class="activity-listing">
+                        Listing: <strong>${address}</strong>
+                    </p>
+                    <p class="activity-excerpt">"${review.description.substring(0, 80)}..."</p>
+                </div>
+            `;
+        }).join('');
+
+        recentActivityContainer.innerHTML = activityHTML;
     }
 
 
     function renderListingsTable(listings) {
-        listingsTableContainer.innerHTML = ''; // Clear previous content
+        listingsTableContainer.innerHTML = ''; 
 
         if (!listings || listings.length === 0) {
             listingsTableContainer.innerHTML = '<p>You have no current property listings.</p>';
@@ -132,13 +204,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div>Actions</div>
             </div>
             ${listings.map(listing => {
-                // RENDER FIX: Using listing_id, name, availability, and accessing bedrooms via property_details
                 const bedrooms = listing.property_details ? listing.property_details.bedrooms : 'N/A';
                 const status = listing.availability ? 'Active' : 'Inactive';
                 const statusClass = listing.availability ? 'status-active' : 'status-inactive';
                 
-                // NOTE: avg_rating and total_reviews are still missing
-                const ratingDisplay = 'N/A'; 
+                const ratingDisplay = listing.avgRating ? `${listing.avgRating}/5` : 'N/A'; 
 
                 return `
                     <div class="table-row" data-listing-id="${listing.listing_id}">
@@ -150,8 +220,12 @@ document.addEventListener('DOMContentLoaded', () => {
                             ${status}
                         </div>
                         <div class="actions">
-                            <button class="btn-secondary btn-small view-stats-btn">View Stats</button>
-                            <button class="btn-primary btn-small edit-listing-btn">Edit</button>
+                            <button class="action-btn view-stats-btn" title="View Listing Statistics">
+                                <i class="fas fa-chart-bar"></i> Stats
+                            </button>
+                            <button class="action-btn edit edit-listing-btn" title="Edit Listing Details">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
                         </div>
                     </div>
                 `;
@@ -159,23 +233,22 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
 
         listingsTableContainer.innerHTML = tableHTML;
-        attachViewStatsListeners(); // Re-attach listeners for dynamically created buttons
-        attachEditListeners(); // Re-attach listeners for dynamically created buttons
+        attachViewStatsListeners(); 
+        attachEditListeners(); 
     }
 
     async function renderListingDetails(listingID, listingName) {
-        // FETCH FIX: Use listing_id, name, and join property_details for description/bedrooms
-        // Removed references to contact_rate, avg_rating, total_reviews
+        // Fetch listing details and bedrooms/description
         const { data: listing, error: listingError } = await supabase
             .from('listings')
             .select('name, price, property_details(description, bedrooms)') 
             .eq('listing_id', listingID)
             .single();
 
-        // Fetch reviews (Reviews table assumed to exist and have listing_id)
+        // Fetch reviews 
         const { data: reviews, error: reviewError } = await supabase
             .from('reviews')
-            .select('rating, content, reviewer_name')
+            .select('rating, description, user_id, created_at')
             .eq('listing_id', listingID)
             .order('created_at', { ascending: false })
             .limit(5);
@@ -186,30 +259,26 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        if (reviewError) {
-            console.warn('Error fetching listing reviews, showing only listing data:', reviewError);
-        }
+        // Calculate average rating and total reviews for this listing
+        const reviewsCount = reviews ? reviews.length : 0;
+        const totalRating = reviews ? reviews.reduce((sum, r) => sum + r.rating, 0) : 0;
+        const avgRating = reviewsCount > 0 ? (totalRating / reviewsCount).toFixed(1) : 'N/A';
 
         // Update Details Module DOM
-        document.getElementById('detail-listing-address').textContent = listingName;
-        // STATS FIX: Replaced missing stats with N/A or temporary placeholders
-        document.getElementById('detail-stat-contact-rate').textContent = 'N/A'; // contact_rate removed from schema
-        document.getElementById('detail-stat-avg-rating').textContent = 'N/A / 5'; // avg_rating removed from schema
-        document.getElementById('detail-stat-price').textContent = `$${listing.price}`;
-        // DESCRIPTION FIX: Accessing description from the joined property_details table
-        // NOTE: The element with id='listing-description' is NOT in the HTML file provided, 
-        // so this line might cause an error unless you add it to the 'listing-details' section.
-        // document.getElementById('listing-description').textContent = description; 
+        document.getElementById('detail-listing-address').textContent = `Listing Details: ${listingName}`;
         
+        // Update stats cards
+        document.getElementById('detail-stat-contact-rate').textContent = 'N/A'; 
+        document.getElementById('detail-stat-avg-rating').textContent = avgRating; 
+        document.getElementById('detail-stat-price').textContent = `$${listing.price}`;
         
         // Render Reviews Section
         const totalReviewCountSpan = document.getElementById('total-review-count');
-        totalReviewCountSpan.textContent = reviews ? reviews.length : 0; // Using fetched review count for total
+        totalReviewCountSpan.textContent = reviewsCount; 
 
         renderRatingDistribution(reviews);
         renderRecentReviews(reviews);
         
-        // Switch to the Listing Details module
         switchModule('listing-details');
     }
 
@@ -224,7 +293,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const counts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
         reviews.forEach(review => {
-            const rating = Math.round(review.rating); // Ensure integer rating
+            const rating = Math.round(review.rating); 
             if (counts.hasOwnProperty(rating)) {
                 counts[rating]++;
             }
@@ -259,11 +328,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         reviews.forEach(review => {
-            const metaText = `${review.rating}/5 | ${review.reviewer_name || 'Anonymous'}`;
+            // SCHEMA FIX: Using 'user_id' for reviewer and 'description' for content
+            const reviewerDisplay = review.user_id ? `User ID: ${review.user_id.substring(0, 8)}...` : 'Anonymous';
+            const metaText = `${review.rating}/5 | ${reviewerDisplay} - ${new Date(review.created_at).toLocaleDateString()}`;
+            
             const reviewHTML = `
                 <div class="review-card">
                     <p class="review-meta">${metaText}</p>
-                    <p class="review-text">"${review.content || 'No comment provided.'}"</p>
+                    <p class="review-text">"${review.description || 'No comment provided.'}"</p>
                 </div>
             `;
             container.insertAdjacentHTML('beforeend', reviewHTML);
@@ -271,13 +343,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function getAllFeedback() {
-        // FEEDBACK FIX: Use listing_id and name
-        // NOTE: This function still pulls ALL feedback from the DB. 
-        // If you want to limit feedback to only the landlord's listings, 
-        // you would need to fetch the landlord's IDs first and use an `.in('listing_id', [...ids])` filter.
+        const landlordId = await getCurrentLandlordId();
+        if (!landlordId) {
+            allFeedbackContainer.innerHTML = '<p class="error-message">Cannot load feedback: User not logged in.</p>';
+            return;
+        }
+
+        // Fetch all reviews for listings owned by this landlord
+        // SCHEMA FIX: Selecting 'description' and joining 'listings(name)' and filtering by landlord_id
         const { data: reviews, error } = await supabase
             .from('reviews')
-            .select('listing_id, rating, content, created_at, reviewer_name, listings(name)')
+            .select('listing_id, rating, description, created_at, user_id, listings(name, landlord_id)')
+            .eq('listings.landlord_id', landlordId) // Filter by landlord ID using the joined table
             .order('created_at', { ascending: false });
         
         if (error) {
@@ -300,6 +377,8 @@ document.addEventListener('DOMContentLoaded', () => {
         reviews.forEach(review => {
             const date = new Date(review.created_at).toLocaleDateString();
             const ratingText = '★'.repeat(Math.round(review.rating));
+            // SCHEMA FIX: Using 'description' and 'user_id'
+            const reviewerDisplay = review.user_id ? `User ID: ${review.user_id.substring(0, 8)}...` : 'Anonymous';
 
             const feedbackCardHTML = `
                 <div class="feedback-card">
@@ -312,8 +391,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             ${review.listings.name || 'Unknown Address'}
                         </a>
                     </p>
-                    <p class="feedback-content">"${review.content || 'No comment provided.'}"</p>
-                    <p class="feedback-meta">Reviewed by: ${review.reviewer_name || 'Anonymous'}</p>
+                    <p class="feedback-content">"${review.description || 'No comment provided.'}"</p>
+                    <p class="feedback-meta">Reviewed by: ${reviewerDisplay}</p>
                 </div>
             `;
             allFeedbackContainer.insertAdjacentHTML('beforeend', feedbackCardHTML);
@@ -325,19 +404,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.preventDefault();
                 const listingID = e.currentTarget.dataset.listingId;
                 const listingName = e.currentTarget.textContent.trim();
-                setActiveNav(listingsNav); // Visually activate Listings tab
-                renderListingDetails(listingID, listingName); // Render the details
+                setActiveNav(listingsNav); 
+                renderListingDetails(listingID, listingName); 
             });
         });
     }
     
-    // --- Listing Edit Functions ---
+    // --- Listing Edit Functions (Kept for completeness) ---
 
     async function openEditListingForm(listingID) {
         currentListingID = listingID;
-        editMessage.textContent = ''; // Clear previous messages
+        editMessage.textContent = ''; 
         
-        // FETCH FIX: Use listing_id, name, availability, and join property_details for bedrooms/description
         const { data: listing, error } = await supabase
             .from('listings')
             .select('name, price, availability, property_details(bedrooms, description)')
@@ -350,15 +428,12 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Populate the form fields
-        editAddress.value = listing.name; // Use 'name' instead of 'address'
+        editAddress.value = listing.name; 
         editPrice.value = listing.price;
-        // FIELD FIX: Accessing bedrooms and description from the joined property_details table
         editBedrooms.value = listing.property_details ? listing.property_details.bedrooms : '';
         editDescription.value = listing.property_details ? listing.property_details.description || '' : '';
-        editAvailability.value = listing.availability.toString(); // Use 'availability' instead of 'is_available'
+        editAvailability.value = listing.availability.toString(); 
         
-        // Switch to the edit module
         switchModule('edit-listing');
     }
 
@@ -373,26 +448,21 @@ document.addEventListener('DOMContentLoaded', () => {
         editMessage.textContent = 'Saving changes...';
         editMessage.classList.remove('error', 'success');
 
-        // --- Prepare Data ---
-        // Data for the 'listings' table
         const listingUpdateData = {
-            name: editAddress.value, // Use 'name'
+            name: editAddress.value, 
             price: parseInt(editPrice.value, 10),
-            availability: editAvailability.value === 'true' // Use 'availability'
+            availability: editAvailability.value === 'true' 
         };
 
-        // Data for the 'property_details' table
         const propertyDetailsUpdateData = {
             bedrooms: parseInt(editBedrooms.value, 10),
             description: editDescription.value,
         };
 
-
-        // --- Update LISTINGS Table ---
         const { error: listingError } = await supabase
             .from('listings')
             .update(listingUpdateData)
-            .eq('listing_id', currentListingID); // Use 'listing_id'
+            .eq('listing_id', currentListingID); 
 
         if (listingError) {
             console.error('Error updating listing details:', listingError);
@@ -401,25 +471,21 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // --- Update PROPERTY_DETAILS Table ---
         const { error: detailsError } = await supabase
             .from('property_details')
             .update(propertyDetailsUpdateData)
-            .eq('listing_id', currentListingID); // Use 'listing_id'
+            .eq('listing_id', currentListingID); 
 
         if (detailsError) {
             console.error('Error updating property details:', detailsError);
-            // Show success for listing but warn about property details failure
             editMessage.textContent = `Listing details updated, but error updating property specs: ${detailsError.message}`;
             editMessage.classList.add('error');
             return;
         }
         
-        // --- Success ---
         editMessage.textContent = 'Listing updated successfully!';
         editMessage.classList.add('success');
         
-        // Re-render the listings table after a short delay to show the change
         setTimeout(() => {
             switchModule('listings');
             getLandlordListings();
@@ -438,14 +504,10 @@ document.addEventListener('DOMContentLoaded', () => {
             setActiveNav(e.currentTarget);
             switchModule(targetId);
 
-            // Fetch data for the relevant module
-            if (targetId === 'listings') {
+            if (targetId === 'listings' || targetId === 'overview') {
                 getLandlordListings();
             } else if (targetId === 'feedback') {
                 getAllFeedback();
-            } else if (targetId === 'overview') {
-                // Listings fetching (inside getLandlordListings) also updates overview stats
-                getLandlordListings(); 
             }
         });
     });
@@ -454,9 +516,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function attachViewStatsListeners() {
         const viewStatsButtons = document.querySelectorAll('.view-stats-btn');
         viewStatsButtons.forEach(btn => {
-            // Remove old listener if one existed (preventing duplicates)
             btn.removeEventListener('click', handleViewStatsClick);
-            // Add new listener
             btn.addEventListener('click', handleViewStatsClick); 
         });
     }
@@ -464,18 +524,21 @@ document.addEventListener('DOMContentLoaded', () => {
     function attachEditListeners() {
         const editButtons = document.querySelectorAll('.edit-listing-btn');
         editButtons.forEach(editBtn => {
-            const row = editBtn.closest('.table-row');
-            // FIX: Using listing_id
-            const listingID = row.dataset.listingId;
-            // Remove/Add Listener Pattern to ensure no duplicates
-            editBtn.removeEventListener('click', (e) => handleEditClick(e, listingID));
-            editBtn.addEventListener('click', (e) => handleEditClick(e, listingID));
+            editBtn.removeEventListener('click', handleEditClickGeneral);
+            editBtn.addEventListener('click', handleEditClickGeneral);
         });
+    }
+    
+    function handleEditClickGeneral(e) {
+        e.preventDefault();
+        const row = e.target.closest('.table-row');
+        const listingID = row.dataset.listingId;
+        openEditListingForm(listingID);
     }
 
     function handleViewStatsClick(e) {
+        e.preventDefault(); 
         const row = e.target.closest('.table-row');
-        // FIX: Using listing_id
         const listingID = row.dataset.listingId;
         const listingName = row.querySelector('div').textContent.trim();
         
@@ -483,12 +546,6 @@ document.addEventListener('DOMContentLoaded', () => {
         setActiveNav(listingsNav); 
     }
     
-    // NEW: Handle Edit button click
-    function handleEditClick(e, listingID) {
-        e.preventDefault();
-        openEditListingForm(listingID);
-    }
-
     // 3. Back Button Click (Goes back to Listings Summary)
     backToListingsButton.addEventListener('click', () => {
         switchModule('listings');
@@ -505,13 +562,10 @@ document.addEventListener('DOMContentLoaded', () => {
         setActiveNav(listingsNav);
     });
     
-    // Placeholder function for the "Add New Listing" button
     window.openListingForm = function() {
-        // You can now implement a modal here or switch to the #add-listing module you prepared.
         alert("Opening the Landlord Listing Form modal (conceptual action)...");
     };
     
     // --- Initial Load ---
-    // Start by fetching data for the default active module (Overview/Listings)
     getLandlordListings();
 });

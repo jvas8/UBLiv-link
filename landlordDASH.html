@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UB Liv'Link Landlord Dashboard</title>
-    <link rel="stylesheet" href="styles.css"> 
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
     <div class="dashboard-wrapper">
@@ -26,86 +27,78 @@
         <main class="content-area">
             
             <section id="overview" class="landlord-module active">
+                <h3>Dashboard Overview</h3>
                 <div class="stats-grid" id="stats-grid-container">
                     <div class="stat-card primary">
                         <h3>Active Listings</h3>
                         <p class="stat-number" id="overview-stat-active-listings">0</p>
                     </div>
                     <div class="stat-card accent">
+                        <h3>Avg. Review Score</h3>
+                        <p class="stat-number" id="overview-stat-avg-rating">N/A</p>
+                    </div>
+                    <div class="stat-card primary">
                         <h3>Total Reviews</h3>
                         <p class="stat-number" id="overview-stat-total-reviews">0</p>
                     </div>
-                    <div class="stat-card primary">
-                        <h3>Avg. Review Score</h3>
-                        <p class="stat-number" id="overview-stat-avg-rating">0.0</p>
-                    </div>
+                </div>
+
+                <h4>Recent Activity</h4>
+                <div class="recent-activity-container" id="recent-activity-container">
+                    <p>No recent activity to display.</p>
                 </div>
             </section>
 
             <section id="listings" class="landlord-module">
-                <h2>🏠 Manage Listings</h2>
-                <div class="listing-table">
-                    <div id="listings-table-container">
-                        <!-- Listings will be loaded here dynamically -->
+                <h3>Property Listings Management</h3>
+                <div class="listings-table" id="listings-table-container">
                     </div>
-                </div>
             </section>
             
             <section id="listing-details" class="landlord-module">
-                <div class="detail-header">
-                    <button id="back-to-listings" class="action-btn">← Back to Listings</button>
-                    <h3 id="detail-listing-address">Listing Details: [Address]</h3>
-                </div>
+                <button class="btn-secondary" id="back-to-listings"><i class="fas fa-arrow-left"></i> Back to Listings</button>
+                <h3 id="detail-listing-address">Listing Details: [Address]</h3>
 
-                <h3>Key Metrics</h3>
-                <div class="stats-grid">
-                    <div class="stat-card primary">
-                        <h3>Contact Rate</h3>
-                        <p class="stat-number" id="detail-stat-contact-rate">...</p>
+                <div class="details-stats-grid">
+                    <div class="detail-stat-card">
+                        <p class="stat-number" id="detail-stat-price">$0</p>
+                        <p class="stat-label">Price</p>
                     </div>
-                    <div class="stat-card accent">
-                        <h3>Avg. Review Score</h3>
-                        <p class="stat-number" id="detail-stat-avg-rating">...</p>
+                    <div class="detail-stat-card">
+                        <p class="stat-number" id="detail-stat-contact-rate">N/A</p>
+                        <p class="stat-label">Contact Rate</p>
                     </div>
-                    <div class="stat-card primary">
-                        <h3>Rent Price</h3>
-                        <p class="stat-number" id="detail-stat-price">...</p>
+                    <div class="detail-stat-card">
+                        <p class="stat-number" id="detail-stat-avg-rating">N/A</p>
+                        <p class="stat-label">Avg. Rating</p>
                     </div>
                 </div>
 
-                <h3>Review Breakdown</h3>
-                <div class="review-breakdown">
-                    <div class="metric-card">
-                        <h4>Rating Distribution (<span id="total-review-count">0</span> reviews)</h4>
-                        <div id="rating-distribution-container">
-                            <!-- Rating distribution will be loaded here -->
+                <div class="reviews-section">
+                    <h4>Review Breakdown (<span id="total-review-count">0</span> Total)</h4>
+                    <div class="review-charts-and-recent">
+                        <div class="rating-distribution" id="rating-distribution-container">
+                            <p>Loading distribution...</p>
                         </div>
-                    </div>
-                    <div class="metric-card">
-                        <h4>Recent Reviews</h4>
-                         <div class="review-list" id="recent-reviews-container">
-                            <!-- Recent reviews will be loaded here -->
+                        <div class="recent-reviews">
+                            <h5>Most Recent Reviews</h5>
+                            <div id="recent-reviews-container">
+                                <p>No recent reviews.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <section id="feedback" class="landlord-module">
-                <h2>⭐ All Feedback</h2>
-                <div id="all-feedback-container" class="feedback-grid">
-                    <!-- Feedback will be loaded here -->
-                </div>
-            </section>
-            
             <section id="edit-listing" class="landlord-module">
-                <h2>✏️ Edit Listing Details</h2>
-                <form id="edit-listing-form" class="listing-form">
+                <h3>Edit Listing</h3>
+                <form id="edit-listing-form" class="form-container">
                     <div class="form-group">
-                        <label for="edit-address">Property Address</label>
+                        <label for="edit-address">Address/Name</label>
                         <input type="text" id="edit-address" required>
                     </div>
                     <div class="form-group">
-                        <label for="edit-price">Monthly Price ($)</label>
+                        <label for="edit-price">Price ($)</label>
                         <input type="number" id="edit-price" required min="100">
                     </div>
                     <div class="form-group">
@@ -124,16 +117,24 @@
                         </select>
                     </div>
 
-                    <button type="submit" class="btn-primary">Save Changes</button>
-                    <button type="button" class="btn-secondary" id="cancel-edit-btn">Cancel</button>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">Save Changes</button>
+                        <button type="button" class="btn-secondary" id="cancel-edit-btn">Cancel</button>
+                    </div>
                     <p id="edit-message" class="message-text"></p>
                 </form>
             </section>
             
+            <section id="feedback" class="landlord-module">
+                <h3>All Customer Feedback</h3>
+                <div class="all-feedback-container" id="all-feedback-container">
+                    <p>Loading feedback...</p>
+                </div>
+            </section>
+
         </main>
     </div>
 
-    <!-- Fix the script path - adjust based on your actual file structure -->
-    <script src="/script/dashboard-scripts.js" type="module"></script>
+    <script src="./script/dashboard-scripts.js" type="module"></script>
 </body>
 </html>
