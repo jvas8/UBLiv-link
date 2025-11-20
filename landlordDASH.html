@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>UB Liv'Link Landlord Dashboard</title>
@@ -9,256 +9,208 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
     />
-  </head>
-  <body>
+</head>
+<body>
     <div class="dashboard-wrapper">
-      <aside class="sidebar">
-        <div class="logo-container">
-          <div class="app-name">UB Liv'Link</div>
-        </div>
-
-        <nav class="nav-menu">
-          <a href="#overview" class="nav-item active">📊 Overview</a>
-          <a href="#listings" class="nav-item" id="listings-nav"
-            >🏠 Manage Listings</a
-          >
-          <a href="#feedback" class="nav-item">⭐ All Feedback</a>
-        </nav>
-        <div class="sidebar-footer">
-          <button class="btn-secondary" id="logout-btn">
-            <i class="fas fa-sign-out-alt"></i> Logout
-          </button>
-        </div>
-        <button class="add-listing-btn" onclick="openListingForm()">
-          + Add New Listing
-        </button>
-
-        <button class="add-listing-btn" onclick="openListingForm()">
-          + Add New Listing
-        </button>
-      </aside>
-
-      <main class="content-area">
-        <section id="overview" class="landlord-module active">
-          <h3>Dashboard Overview</h3>
-          <div class="stats-grid" id="stats-grid-container">
-            <div class="stat-card primary">
-              <h3>Active Listings</h3>
-              <p class="stat-number" id="overview-stat-active-listings">0</p>
+        
+        <aside class="sidebar">
+            <div class="logo-container">
+                <div class="app-name">UB Liv'Link</div>
             </div>
-            <div class="stat-card accent">
-              <h3>Avg. Review Score</h3>
-              <p class="stat-number" id="overview-stat-avg-rating">N/A</p>
+            
+            <nav class="nav-menu">
+                <ul>
+                    <li><a href="#overview" class="nav-item active">📊 Overview</a></li>
+                    <li><a href="#listings" class="nav-item" id="listings-nav">🏠 Manage Listings</a></li>
+                    <li><a href="#feedback" class="nav-item">⭐ All Feedback</a></li>
+                </ul>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <button class="add-listing-btn btn-primary" onclick="openListingForm()">
+                    <i class="fas fa-plus"></i> Add New Listing
+                </button>
+                <button class="btn-secondary logout-btn" id="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
             </div>
-            <div class="stat-card primary">
-              <h3>Total Reviews</h3>
-              <p class="stat-number" id="overview-stat-total-reviews">0</p>
-            </div>
-          </div>
+        </aside>
 
-          <h4>Recent Activity</h4>
-          <div class="recent-activity-container" id="recent-activity-container">
-            <p>No recent activity to display.</p>
-          </div>
-        </section>
-
-        <section id="listings" class="landlord-module">
-          <h3>Property Listings Management</h3>
-          <div class="listings-table" id="listings-table-container"></div>
-        </section>
-
-        <section id="listing-details" class="landlord-module">
-          <button class="btn-secondary" id="back-to-listings">
-            <i class="fas fa-arrow-left"></i> Back to Listings
-          </button>
-          <h3 id="detail-listing-address">Listing Details: [Address]</h3>
-
-          <div class="details-stats-grid">
-            <div class="detail-stat-card">
-              <p class="stat-number" id="detail-stat-price">$0</p>
-              <p class="stat-label">Price</p>
-            </div>
-            <div class="detail-stat-card">
-              <p class="stat-number" id="detail-stat-contact-rate">N/A</p>
-              <p class="stat-label">Contact Rate</p>
-            </div>
-            <div class="detail-stat-card">
-              <p class="stat-number" id="detail-stat-avg-rating">N/A</p>
-              <p class="stat-label">Avg. Rating</p>
-            </div>
-          </div>
-
-          <div class="reviews-section">
-            <h4>
-              Review Breakdown (<span id="total-review-count">0</span> Total)
-            </h4>
-            <div class="review-charts-and-recent">
-              <div
-                class="rating-distribution"
-                id="rating-distribution-container"
-              >
-                <p>Loading distribution...</p>
-              </div>
-              <div class="recent-reviews">
-                <h5>Most Recent Reviews</h5>
-                <div id="recent-reviews-container">
-                  <p>No recent reviews.</p>
+        <main class="content-area">
+            
+            <section id="overview" class="landlord-module active">
+                <h2>Dashboard Overview</h2>
+                
+                <div class="stats-grid" id="stats-grid-container">
+                    <div class="stat-card primary">
+                        <h3>Active Listings</h3>
+                        <p class="stat-number" id="overview-stat-active-listings">0</p>
+                    </div>
+                    <div class="stat-card accent">
+                        <h3>Total Views (30 Days)</h3>
+                        <p class="stat-number" id="overview-stat-total-views">0</p>
+                    </div>
+                    <div class="stat-card secondary">
+                        <h3>New Leads</h3>
+                        <p class="stat-number" id="overview-stat-new-leads">0</p>
+                    </div>
+                    <div class="stat-card success">
+                        <h3>Leased Listings</h3>
+                        <p class="stat-number" id="overview-stat-leased">0</p>
+                    </div>
                 </div>
-              </div>
-            </div>
-          </div>
-        </section>
+                
+                <div class="recent-activity">
+                    <h3>Recent Activity</h3>
+                    <div class="activity-list" id="recent-activity-container">
+                        <p>No recent activity.</p>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="listings" class="landlord-module">
+                <h2>Manage Your Listings</h2>
+                
+                <div class="listings-table-container" id="listings-table-container">
+                    <p>Loading your property listings...</p>
+                </div>
+            </section>
+            
+            <section id="edit-listing" class="landlord-module">
+                <h2>Edit Listing: <span id="edit-listing-address">[Loading Address...]</span></h2>
+                <p id="edit-message" class="message-text"></p>
+                
+                <form id="edit-listing-form">
+                    <input type="hidden" id="edit-listing-id" name="listing_id">
 
-        <section id="edit-listing" class="landlord-module">
-          <h3>Edit Listing</h3>
-          <form id="edit-listing-form" class="form-container">
-            <div class="form-group">
-              <label for="edit-address">Address/Name</label>
-              <input type="text" id="edit-address" required />
-            </div>
-            <div class="form-group">
-              <label for="edit-price">Price ($)</label>
-              <input type="number" id="edit-price" required min="100" />
-            </div>
-            <div class="form-group">
-              <label for="edit-bedrooms">Bedrooms</label>
-              <input type="number" id="edit-bedrooms" required min="1" />
-            </div>
-            <div class="form-group">
-              <label for="edit-description">Description</label>
-              <textarea id="edit-description" rows="4"></textarea>
-            </div>
-            <div class="form-group">
-              <label for="edit-availability">Availability Status</label>
-              <select id="edit-availability" required>
-                <option value="true">Active (Available)</option>
-                <option value="false">Inactive (Rented/Draft)</option>
-              </select>
-            </div>
+                    <div class="form-group">
+                        <label for="edit-address">Address</label>
+                        <input type="text" id="edit-address" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-price">Monthly Price ($)</label>
+                        <input type="number" id="edit-price" required min="100">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-bedrooms">Bedrooms</label>
+                        <input type="number" id="edit-bedrooms" required min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-description">Description</label>
+                        <textarea id="edit-description" rows="4"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-availability">Availability Status</label>
+                        <select id="edit-availability" required>
+                            <option value="true">Active (Available)</option>
+                            <option value="false">Inactive (Rented/Draft)</option>
+                        </select>
+                    </div>
 
-            <div class="form-actions">
-              <button type="submit" class="btn-primary">Save Changes</button>
-              <button type="button" class="btn-secondary" id="cancel-edit-btn">
-                Cancel
-              </button>
-            </div>
-            <p id="edit-message" class="message-text"></p>
-          </form>
-        </section>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">Save Changes</button>
+                        <button type="button" class="btn-secondary" id="cancel-edit-btn">Cancel</button>
+                    </div>
+                </form>
+            </section>
+            
+            <section id="add-listing" class="landlord-module">
+                <h2>Post a Rental Listing</h2>
+                <p class="subtitle">Enter your property details, set pricing, and showcase amenities.</p>
+                <p id="new-listing-message" class="message-text"></p>
 
-        <section id="feedback" class="landlord-module">
-          <h3>All Customer Feedback</h3>
-          <div class="all-feedback-container" id="all-feedback-container">
-            <p>Loading feedback...</p>
-          </div>
-        </section>
-        <section id="add-listing" class="landlord-module">
-          <h3>✨ Post a New Rental Listing</h3>
-          <p class="subtitle">
-            Enter your property details, set pricing, and showcase amenities.
-          </p>
+                <form id="new-listing-form">
+                    <fieldset>
+                        <legend>1. Property Details</legend>
+                        <div class="fieldset-content grid-2">
+                            <div class="form-group span-2">
+                                <label for="new-address">Full Address</label>
+                                <input type="text" id="new-address" name="address" required placeholder="Street, City, Postal Code" />
+                            </div>
+                            <div class="form-group">
+                                <label for="new-propertyType">Property Type</label>
+                                <select id="new-propertyType" name="propertyType" required>
+                                    <option value="">Select Type</option>
+                                    <option value="apartment">Apartment</option>
+                                    <option value="house">House</option>
+                                    <option value="room">Single Room</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="new-sqft">Square Footage (sqft)</label>
+                                <input type="number" id="new-sqft" name="sqft" placeholder="Optional" min="100" />
+                            </div>
+                            <div class="form-group">
+                                <label for="new-bedrooms">Bedrooms</label>
+                                <input type="number" id="new-bedrooms" name="bedrooms" required min="1" />
+                            </div>
+                            <div class="form-group">
+                                <label for="new-bathrooms">Bathrooms</label>
+                                <input type="number" id="new-bathrooms" name="bathrooms" required min="1" />
+                            </div>
+                        </div>
+                    </fieldset>
 
-          <form id="new-listing-form">
-            <div class="form-content grid-2">
-              <div class="form-group span-2">
-                <label for="new-address">Full Address</label>
-                <input
-                  type="text"
-                  id="new-address"
-                  name="address"
-                  required
-                  placeholder="Street, City, Postal Code"
-                />
-              </div>
+                    <fieldset>
+                        <legend>2. Pricing & Availability</legend>
+                        <div class="fieldset-content grid-2">
+                            <div class="form-group">
+                                <label for="new-price">Monthly Rent ($)</label>
+                                <input type="number" id="new-price" name="price" required min="100" />
+                            </div>
+                            <div class="form-group">
+                                <label for="new-leaseTerm">Min. Lease</label>
+                                <select id="new-leaseTerm" name="leaseTerm" required>
+                                    <option value="12 Months">12 Months</option>
+                                    <option value="9 Months (Academic)">9 Months (Academic)</option>
+                                    <option value="6 Months">6 Months</option>
+                                </select>
+                            </div>
+                            <div class="form-group span-2">
+                                <label for="new-description">Property Description</label>
+                                <textarea
+                                id="new-description"
+                                name="description"
+                                rows="5"
+                                placeholder="Highlight key features, amenities, and proximity to campus..."
+                                ></textarea>
+                            </div>
+                        </div>
+                    </fieldset>
 
-              <div class="form-group">
-                <label for="new-propertyType">Property Type</label>
-                <select id="new-propertyType" name="propertyType" required>
-                  <option value="">Select Type</option>
-                  <option value="apartment">Apartment</option>
-                  <option value="house">House</option>
-                  <option value="room">Single Room</option>
-                </select>
-              </div>
+                    <fieldset>
+                        <legend>3. Photos & Media</legend>
+                        <div class="form-group">
+                            <p>Photo upload is conceptual here.</p>
+                            <input
+                                type="file"
+                                id="new-photos"
+                                name="photos[]"
+                                multiple
+                                accept="image/*"
+                                class="file-input"
+                            />
+                            <small>Minimum 3 high-quality images suggested.</small>
+                        </div>
+                    </fieldset>
 
-              <div class="form-group">
-                <label for="new-price">Monthly Price ($)</label>
-                <input
-                  type="number"
-                  id="new-price"
-                  name="price"
-                  required
-                  min="100"
-                />
-              </div>
-
-              <div class="form-group">
-                <label for="new-bedrooms">Bedrooms</label>
-                <input
-                  type="number"
-                  id="new-bedrooms"
-                  name="bedrooms"
-                  required
-                  min="1"
-                />
-              </div>
-
-              <div class="form-group">
-                <label for="new-leaseTerm">Lease</label>
-                <select id="new-leaseTerm" name="leaseTerm" required>
-                  <option value="12 Months">12 Months</option>
-                  <option value="9 Months (Academic)">
-                    9 Months (Academic)
-                  </option>
-                  <option value="6 Months">6 Months</option>
-                </select>
-              </div>
-
-              <div class="form-group span-2">
-                <label for="new-description">Property Description</label>
-                <textarea
-                  id="new-description"
-                  name="description"
-                  rows="5"
-                  placeholder="Highlight key features, amenities, and proximity to campus..."
-                ></textarea>
-              </div>
-            </div>
-
-            <fieldset>
-              <legend>Photos & Media</legend>
-              <div class="form-group">
-                <p>Photo upload is conceptual here.</p>
-                <input
-                  type="file"
-                  id="new-photos"
-                  name="photos[]"
-                  multiple
-                  accept="image/*"
-                  class="file-input"
-                />
-                <small>Minimum 3 high-quality images suggested.</small>
-              </div>
-            </fieldset>
-
-            <div class="button-group">
-              <button type="submit" class="submit-btn btn-primary">
-                Publish Listing
-              </button>
-              <button
-                type="button"
-                class="cancel-btn btn-secondary"
-                id="cancel-new-listing-btn"
-              >
-                Discard Draft
-              </button>
-            </div>
-            <p id="new-listing-message" class="message-text"></p>
-          </form>
-        </section>
-      </main>
+                    <div class="button-group">
+                        <button type="submit" class="submit-btn btn-primary">Publish Listing</button>
+                        <button type="button" class="cancel-btn btn-secondary" id="cancel-new-listing-btn">Discard Draft</button>
+                    </div>
+                </form>
+            </section>
+            
+            <section id="feedback" class="landlord-module">
+                <h2>All Customer Feedback</h2>
+                <div class="all-feedback-container" id="all-feedback-container">
+                    <p>Loading feedback...</p>
+                </div>
+            </section>
+            
+        </main>
     </div>
 
     <script src="./script/dashboard-scripts.js" type="module"></script>
-  </body>
+</body>
 </html>
