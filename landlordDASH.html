@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UB Liv'Link Landlord Dashboard</title>
+    <link rel="stylesheet" href="styles.css"> 
+</head>
+<body>
+    <div class="dashboard-wrapper">
+        
+        <aside class="sidebar">
+            <div class="logo-container">
+                <div class="app-name">UB Liv'Link</div>
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="#overview" class="nav-item active">📊 Overview</a>
+                <a href="#listings" class="nav-item" id="listings-nav">🏠 Manage Listings</a>
+                <a href="#feedback" class="nav-item">⭐ All Feedback</a>
+            </nav>
+            
+            <button class="add-listing-btn" onclick="openListingForm()">+ Add New Listing</button>
+        </aside>
+
+        <main class="content-area">
+            
+            <section id="overview" class="landlord-module active">
+                <div class="stats-grid" id="stats-grid-container">
+                    <div class="stat-card primary">
+                        <h3>Active Listings</h3>
+                        <p class="stat-number" id="overview-stat-active-listings">0</p>
+                    </div>
+                    <div class="stat-card accent">
+                        <h3>Total Reviews</h3>
+                        <p class="stat-number" id="overview-stat-total-reviews">0</p>
+                    </div>
+                    <div class="stat-card primary">
+                        <h3>Avg. Review Score</h3>
+                        <p class="stat-number" id="overview-stat-avg-rating">0.0</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="listings" class="landlord-module">
+                <h2>🏠 Manage Listings</h2>
+                <div class="listing-table">
+                    <div id="listings-table-container">
+                        <!-- Listings will be loaded here dynamically -->
+                    </div>
+                </div>
+            </section>
+            
+            <section id="listing-details" class="landlord-module">
+                <div class="detail-header">
+                    <button id="back-to-listings" class="action-btn">← Back to Listings</button>
+                    <h3 id="detail-listing-address">Listing Details: [Address]</h3>
+                </div>
+
+                <h3>Key Metrics</h3>
+                <div class="stats-grid">
+                    <div class="stat-card primary">
+                        <h3>Contact Rate</h3>
+                        <p class="stat-number" id="detail-stat-contact-rate">...</p>
+                    </div>
+                    <div class="stat-card accent">
+                        <h3>Avg. Review Score</h3>
+                        <p class="stat-number" id="detail-stat-avg-rating">...</p>
+                    </div>
+                    <div class="stat-card primary">
+                        <h3>Rent Price</h3>
+                        <p class="stat-number" id="detail-stat-price">...</p>
+                    </div>
+                </div>
+
+                <h3>Review Breakdown</h3>
+                <div class="review-breakdown">
+                    <div class="metric-card">
+                        <h4>Rating Distribution (<span id="total-review-count">0</span> reviews)</h4>
+                        <div id="rating-distribution-container">
+                            <!-- Rating distribution will be loaded here -->
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <h4>Recent Reviews</h4>
+                         <div class="review-list" id="recent-reviews-container">
+                            <!-- Recent reviews will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="feedback" class="landlord-module">
+                <h2>⭐ All Feedback</h2>
+                <div id="all-feedback-container" class="feedback-grid">
+                    <!-- Feedback will be loaded here -->
+                </div>
+            </section>
+            
+            <section id="edit-listing" class="landlord-module">
+                <h2>✏️ Edit Listing Details</h2>
+                <form id="edit-listing-form" class="listing-form">
+                    <div class="form-group">
+                        <label for="edit-address">Property Address</label>
+                        <input type="text" id="edit-address" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-price">Monthly Price ($)</label>
+                        <input type="number" id="edit-price" required min="100">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-bedrooms">Bedrooms</label>
+                        <input type="number" id="edit-bedrooms" required min="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-description">Description</label>
+                        <textarea id="edit-description" rows="4"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-availability">Availability Status</label>
+                        <select id="edit-availability" required>
+                            <option value="true">Active (Available)</option>
+                            <option value="false">Inactive (Rented/Draft)</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn-primary">Save Changes</button>
+                    <button type="button" class="btn-secondary" id="cancel-edit-btn">Cancel</button>
+                    <p id="edit-message" class="message-text"></p>
+                </form>
+            </section>
+            
+        </main>
+    </div>
+
+    <!-- Fix the script path - adjust based on your actual file structure -->
+    <script src="/script/dashboard-scripts.js" type="module"></script>
+</body>
+</html>
