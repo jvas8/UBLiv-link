@@ -60,6 +60,20 @@ function switchModule(targetId) {
     }
 }
 
+async function handleLogout() {
+    console.log('[DEBUG] Logout button clicked.');
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+        console.error('Error logging out:', error.message);
+        alert('Could not log out. Please try again.');
+    } else {
+        // Redirect the user to the login page or homepage after successful logout
+        console.log('Successfully logged out. Redirecting...');
+        // *** IMPORTANT: Change 'login.html' to your actual login page URL ***
+        window.location.href = 'index.html'; 
+    }
+}
 document.addEventListener('DOMContentLoaded', () => {
     // --- DOM Elements ---
     const navItems = document.querySelectorAll('.nav-item');
@@ -67,7 +81,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const listingsNav = document.getElementById('listings-nav');
     const backToListingsButton = document.getElementById('back-to-listings');
     const detailListingAddress = document.getElementById('detail-listing-address');
-    
+const logoutBtn = document.getElementById('logout-btn'); // <-- ADD THIS LINE
+
     // Containers for dynamic content
     const listingsTableContainer = document.getElementById('listings-table-container');
     const allFeedbackContainer = document.getElementById('all-feedback-container');
