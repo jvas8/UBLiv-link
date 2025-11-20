@@ -563,7 +563,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     window.openListingForm = function() {
-        alert("Opening the Landlord Listing Form modal (conceptual action)...");
+         window.location.href = "listingform.html";
     };
     
     // --- Initial Load ---
