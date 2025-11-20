@@ -130,20 +130,19 @@
                 <div class="all-feedback-container" id="all-feedback-container">
                     <p>Loading feedback...</p>
                 </div>
-                <section id="add-listing" class="landlord-module">
-    <h1>✨ Post a Rental Listing</h1>
-    <p class="subtitle">Enter your property details, set pricing, and showcase amenities to attract the perfect student resident.</p>
-    
-    <form id="new-listing-form">
-        
-        <fieldset>
-            <legend>1. Property & Location</legend>
-            <div class="fieldset-content grid-2">
+
+            </section>
+            <section id="add-listing" class="landlord-module">
+                <h3>✨ Post a New Rental Listing</h3>
+                <p class="subtitle">Enter your property details, set pricing, and showcase amenities.</p>
+
+                <form id="new-listing-form">
+                <div class="form-content grid-2">
                 <div class="form-group span-2">
                     <label for="new-address">Full Address</label>
                     <input type="text" id="new-address" name="address" required placeholder="Street, City, Postal Code">
                 </div>
-                
+
                 <div class="form-group">
                     <label for="new-propertyType">Property Type</label>
                     <select id="new-propertyType" name="propertyType" required>
@@ -151,27 +150,21 @@
                         <option value="apartment">Apartment</option>
                         <option value="house">House</option>
                         <option value="room">Single Room</option>
-                        <option value="duplex">Duplex/Townhouse</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label for="new-bedrooms">Bedrooms</label>
-                    <input type="number" id="new-bedrooms" name="bedrooms" required min="1" max="10">
+                    <label for="new-price">Monthly Price ($)</label>
+                    <input type="number" id="new-price" name="price" required min="100">
                 </div>
-            </div>
-        </fieldset>
 
-        <fieldset>
-            <legend>2. Pricing & Details</legend>
-            <div class="fieldset-content grid-2">
                 <div class="form-group">
-                    <label for="new-rentPrice">Monthly Rent Price ($)</label>
-                    <input type="number" id="new-rentPrice" name="rentPrice" required min="100">
+                    <label for="new-bedrooms">Bedrooms</label>
+                    <input type="number" id="new-bedrooms" name="bedrooms" required min="1">
                 </div>
-                
+
                 <div class="form-group">
-                    <label for="new-leaseTerm">Min. Lease</label>
+                    <label for="new-leaseTerm">Lease</label>
                     <select id="new-leaseTerm" name="leaseTerm" required>
                         <option value="12 Months">12 Months</option>
                         <option value="9 Months (Academic)">9 Months (Academic)</option>
@@ -183,25 +176,23 @@
                     <label for="new-description">Property Description</label>
                     <textarea id="new-description" name="description" rows="5" placeholder="Highlight key features, amenities, and proximity to campus..."></textarea>
                 </div>
-            </div>
-        </fieldset>
+                </div>
 
-        <fieldset>
-            <legend>3. Photos & Media</legend>
-            <div class="form-group">
-                <p>Photo upload logic is conceptual. Files will not be uploaded with this script.</p>
-                <input type="file" id="new-photos" name="photos[]" multiple accept="image/*" class="file-input">
-                <small>Minimum 3 high-quality images suggested.</small>
-            </div>
-        </fieldset>
+                <fieldset>
+                <legend>Photos & Media</legend>
+                <div class="form-group">
+                    <p>Photo upload is conceptual here.</p>
+                    <input type="file" id="new-photos" name="photos[]" multiple accept="image/*" class="file-input">
+                    <small>Minimum 3 high-quality images suggested.</small>
+                </div>
+                </fieldset>
 
-        <div class="button-group">
-            <button type="submit" class="submit-btn btn-primary">Publish Listing</button>
-            <button type="button" class="cancel-btn btn-secondary" id="cancel-new-listing-btn">Discard Draft</button>
-        </div>
-        <p id="new-listing-message" class="message-text"></p>
-    </form>
-</section>
+                <div class="button-group">
+                <button type="submit" class="submit-btn btn-primary">Publish Listing</button>
+                <button type="button" class="cancel-btn btn-secondary" id="cancel-new-listing-btn">Discard Draft</button>
+                </div>
+                <p id="new-listing-message" class="message-text"></p>
+                </form>
             </section>
 
         </main>
