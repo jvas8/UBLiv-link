@@ -74,6 +74,7 @@ async function handleLogout() {
         window.location.href = 'index.html'; 
     }
 }
+
 document.addEventListener('DOMContentLoaded', () => {
     // --- DOM Elements ---
     const navItems = document.querySelectorAll('.nav-item');
@@ -81,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const listingsNav = document.getElementById('listings-nav');
     const backToListingsButton = document.getElementById('back-to-listings');
     const detailListingAddress = document.getElementById('detail-listing-address');
-const logoutBtn = document.getElementById('logout-btn'); // <-- ADD THIS LINE
+    const logoutBtn = document.getElementById('logout-btn'); // <-- ADD THIS LINE
 
     // Containers for dynamic content
     const listingsTableContainer = document.getElementById('listings-table-container');
@@ -109,6 +110,11 @@ const logoutBtn = document.getElementById('logout-btn'); // <-- ADD THIS LINE
     const cancelNewListingBtn = document.getElementById('cancel-new-listing-btn');
     const newListingMessage = document.getElementById('new-listing-message');
     // ---------------------------------
+
+    // --- ADD LOGOUT EVENT LISTENER ---
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', handleLogout);
+    }
 
     // --- Core UI Functions ---
 

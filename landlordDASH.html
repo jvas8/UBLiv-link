@@ -27,9 +27,6 @@
             </nav>
             
             <div class="sidebar-footer">
-                <button class="add-listing-btn btn-primary" onclick="openListingForm()">
-                    <i class="fas fa-plus"></i> Add New Listing
-                </button>
                 <button class="btn-secondary logout-btn" id="logout-btn">
                     <i class="fas fa-sign-out-alt"></i> Logout
                 </button>
@@ -70,6 +67,9 @@
             
             <section id="listings" class="landlord-module">
                 <h2>Manage Your Listings</h2>
+                <button class="add-listing-btn btn-primary" onclick="openListingForm()" style="margin-bottom: 20px;">
+                    <i class="fas fa-plus"></i> Add New Listing
+                </button>
                 
                 <div class="listings-table-container" id="listings-table-container">
                     <p>Loading your property listings...</p>
