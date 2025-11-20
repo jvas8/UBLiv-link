@@ -23,7 +23,26 @@ async function getCurrentLandlordId() {
     return user.id; 
 }
 
+// dashboard-scripts.js (Place this function OUTSIDE of the DOMContentLoaded block)
 
+function switchModule(targetId) {
+    console.log(`[DEBUG] Switching module to: #${targetId}`); // Log
+    const modules = document.querySelectorAll('.landlord-module');
+    
+    // 1. Hide all modules
+    modules.forEach(module => {
+        module.classList.remove('active');
+    });
+
+    // 2. Show the target module
+    const targetModule = document.getElementById(targetId);
+    if (targetModule) {
+        targetModule.classList.add('active');
+        console.log(`[DEBUG] Successfully activated module: #${targetId}`);
+    } else {
+        console.error(`[ERROR] Module with ID #${targetId} not found in HTML.`); // Log Error
+    }
+}
 document.addEventListener('DOMContentLoaded', () => {
     // --- DOM Elements ---
     const navItems = document.querySelectorAll('.nav-item');
@@ -63,16 +82,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Core UI Functions ---
 
-    function switchModule(targetId) {
-        // Deactivate all modules
-        modules.forEach(mod => mod.classList.remove('active'));
-
-        // Show the target module
-        const targetModule = document.getElementById(targetId);
-        if (targetModule) {
-            targetModule.classList.add('active');
-        }
-    }
     
     function setActiveNav(element) {
         navItems.forEach(nav => nav.classList.remove('active'));
@@ -645,10 +654,14 @@ document.addEventListener('DOMContentLoaded', () => {
         setActiveNav(listingsNav);
     });
     
-window.openListingForm = function() {
-        switchModule('add-listing'); // Switch to the new module ID
-        // Optional: Pre-fill some data or clear previous messages
-        newListingMessage.textContent = ''; 
+// The function called by the sidebar button
+    window.openListingForm = function() {
+        console.log("[DEBUG] 'Add New Listing' button clicked. Initiating switch."); // Log
+        switchModule('add-listing'); 
+        
+        if (newListingMessage) {
+            newListingMessage.textContent = ''; // Clear previous messages
+        }
     };
     // 4. Form Submit Listener for NEW LISTING FORM
     if (newListingForm) {
