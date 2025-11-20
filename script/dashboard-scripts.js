@@ -52,6 +52,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const editBedrooms = document.getElementById('edit-bedrooms');
     const editDescription = document.getElementById('edit-description');
     const editAvailability = document.getElementById('edit-availability');
+    // dashboard-scripts.js (Inside DOMContentLoaded, after existing references)
+
+    // --- NEW LISTING FORM ELEMENTS ---
+    const newListingForm = document.getElementById('new-listing-form');
+    const cancelNewListingBtn = document.getElementById('cancel-new-listing-btn');
+    const newListingMessage = document.getElementById('new-listing-message');
+    // ---------------------------------
 
 
     // --- Core UI Functions ---
@@ -491,6 +498,82 @@ document.addEventListener('DOMContentLoaded', () => {
             getLandlordListings();
         }, 1500);
     }
+    // dashboard-scripts.js (After handleEditListingSubmit or similar functions)
+
+    // --- NEW FUNCTION: Handle New Listing Submission ---
+    async function handleNewListingSubmit(e) {
+        e.preventDefault();
+        newListingMessage.textContent = 'Publishing listing...';
+        newListingMessage.classList.remove('error', 'success');
+
+        const landlordId = await getCurrentLandlordId();
+        if (!landlordId) {
+            newListingMessage.textContent = 'Error: You must be logged in to post a listing.';
+            newListingMessage.classList.add('error');
+            return;
+        }
+
+        // 1. Collect Data from the Form
+        const form = e.target;
+        // Using the 'name' attribute from the HTML (e.g., name="address")
+        const address = form.address.value; 
+        const propertyType = form.propertyType.value;
+        const bedrooms = parseInt(form.bedrooms.value, 10);
+        const price = parseFloat(form.rentPrice.value);
+        const leaseTerm = form.leaseTerm.value;
+        const description = form.description.value;
+        // const photos = form.photos.files; // Stored for later photo logic
+
+        // 2. Insert into 'listings' table (The address serves as both 'name' and 'location')
+        const { data: listingData, error: listingError } = await supabase
+            .from('listings')
+            .insert({
+                landlord_id: landlordId,
+                name: address,      // Address used for listing name
+                location: address,  // Address used for location
+                price: price,
+                leasing: leaseTerm,
+                // availability defaults to true and verification_status to 'pending'
+            })
+            .select('listing_id') // Request the generated ID back
+            .single();
+
+        if (listingError) {
+            console.error('Error creating new listing:', listingError);
+            newListingMessage.textContent = `Error creating listing: ${listingError.message}`;
+            newListingMessage.classList.add('error');
+            return;
+        }
+
+        const newListingId = listingData.listing_id;
+
+        // 3. Insert into 'property_details' table using the new listing_id
+        const { error: detailsError } = await supabase
+            .from('property_details')
+            .insert({
+                listing_id: newListingId,
+                property_type: propertyType,
+                bedrooms: bedrooms,
+                description: description
+            });
+            
+        if (detailsError) {
+            console.error('Error adding property details:', detailsError);
+            // Inform the user, but the core listing is still technically created
+            newListingMessage.textContent = `Listing created, but failed to add details: ${detailsError.message}`;
+            newListingMessage.classList.add('error');
+        } else {
+            newListingMessage.textContent = 'Listing published successfully!';
+            newListingMessage.classList.add('success');
+
+            // 4. Navigate back to listings after success
+            setTimeout(() => {
+                form.reset(); // Clear the form
+                switchModule('listings');
+                getLandlordListings();
+            }, 2000);
+        }
+    }
 
 
     // --- Event Listeners ---
@@ -562,9 +645,24 @@ document.addEventListener('DOMContentLoaded', () => {
         setActiveNav(listingsNav);
     });
     
-    window.openListingForm = function() {
-         window.location.href = "listingform.html";
+window.openListingForm = function() {
+        switchModule('add-listing'); // Switch to the new module ID
+        // Optional: Pre-fill some data or clear previous messages
+        newListingMessage.textContent = ''; 
     };
+    // 4. Form Submit Listener for NEW LISTING FORM
+    if (newListingForm) {
+        newListingForm.addEventListener('submit', handleNewListingSubmit);
+    }
+
+    // 5. Cancel Button Listener for NEW LISTING FORM
+    if (cancelNewListingBtn) {
+        cancelNewListingBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchModule('listings'); // Go back to the listings table
+            getLandlordListings();
+        });
+    }
     
     // --- Initial Load ---
     getLandlordListings();

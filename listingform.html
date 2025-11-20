@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post a Rental Listing</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="form-container">
+        <h1>✨ Post a Rental Listing</h1>
+        <p class="subtitle">Enter your property details, set pricing, and showcase amenities to attract the perfect student resident.</p>
+        
+        <form action="/submit-listing" method="POST" enctype="multipart/form-data">
+            
+            <fieldset>
+                <legend>1. Property & Location</legend>
+                <div class="fieldset-content grid-2">
+                    <div class="form-group span-2">
+                        <label for="address">Full Address</label>
+                        <input type="text" id="address" name="address" required placeholder="Street, City, Postal Code">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="propertyType">Property Type</label>
+                        <select id="propertyType" name="propertyType" required>
+                            <option value="">Select Type</option>
+                            <option value="apartment">Apartment</option>
+                            <option value="house">House</option>
+                            <option value="room">Single Room</option>
+                            <option value="studio">Studio</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="bedrooms">Bedrooms</label>
+                        <input type="number" id="bedrooms" name="bedrooms" min="1" max="10" required>
+                    </div>
+                    
+                    <div class="form-group span-2">
+                        <label for="description">Detailed Listing Description</label>
+                        <textarea id="description" name="description" rows="4" placeholder="Highlight key features, student-friendly benefits, lease expectations, and include amenities & Utilities"></textarea>
+                    </div>
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend>2. Pricing & Terms</legend>
+                <div class="fieldset-content grid-3">
+                    <div class="form-group">
+                        <label for="price">Monthly Price (BZD)</label>
+                        <input type="number" id="price" name="price" min="100" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="availabilityDate">Available From</label>
+                        <input type="date" id="availabilityDate" name="availabilityDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="leaseTerm">Minimum Lease</label>
+                        <select id="leaseTerm" name="leaseTerm" required>
+                            <option value="12">12 Months</option>
+                            <option value="9">9 Months (Academic)</option>
+                            <option value="6">6 Months</option>
+                        </select>
+                    </div>
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend>3. Photos & Media</legend>
+                <div class="form-group">
+                    <div class="drag-drop-area" id="dropArea">
+                        <i class="upload-icon">📸</i>
+                        <p class="drag-text">Drag & Drop Photos Here</p>
+                        <p class="or-text">OR</p>
+                        <input type="file" id="photos" name="photos[]" multiple accept="image/*" class="file-input">
+                        <label for="photos" class="upload-btn">Browse Files</label>
+                        <small>Minimum 3 high-quality images required for publishing.</small>
+                    </div>
+                    <div id="filePreview" class="file-preview-container"></div>
+                </div>
+            </fieldset>
+
+            <div class="button-group">
+                <button type="submit" class="submit-btn">Publish Listing</button>
+                <button type="button" class="cancel-btn">Discard Draft</button>
+            </div>
+
+        </form>
+    </div>
+</body>
+</html>
