@@ -392,7 +392,7 @@ function createListingCard(listing, propertyType, avgRating, landlordEmail, phot
 
                 <div class="rating-info">
                     ${starRatingHTML}
-                    <span class="avg-text">(${avgRating > 0 ? avgRating : 'No Reviews'}${reviewCount > 0 ? `, ${reviewCount} review${reviewCount !== 1 ? 's' : ''}` : ''})</span>
+                    <span class="avg-text">${reviewCount > 0 ? `${reviewCount} review${reviewCount !== 1 ? 's' : ''}` : 'No reviews yet'}</span>
                 </div>
 
                 <p class="listing-price">
@@ -681,7 +681,7 @@ function updateListingCardRating(listingId, reviews) {
             if (ratingInfo) {
                 ratingInfo.innerHTML = `
                     ${starRatingHTML}
-                    <span class="avg-text">(${avgRating > 0 ? avgRating : 'No Reviews'}${reviewCount > 0 ? `, ${reviewCount} review${reviewCount !== 1 ? 's' : ''}` : ''})</span>
+                    <span class="avg-text">${reviewCount > 0 ? `${reviewCount} review${reviewCount !== 1 ? 's' : ''}` : 'No reviews yet'}</span>
                 `;
             }
         }

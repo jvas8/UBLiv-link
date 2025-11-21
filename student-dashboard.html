@@ -71,6 +71,7 @@
     <p>© 2025 UBLiv' Link — Student Housing Portal</p>
   </footer>
 
+<!-- Replace the existing modal section with this improved version -->
 <div class="modal-overlay" id="review-modal" style="display: none;">
     <div class="form-container">
         <h1>Leave a Review 📝</h1>
@@ -83,13 +84,18 @@
             <fieldset class="rating-fieldset">
                 <legend>Overall Rating</legend>
                 <div class="rating-widget">
-                    <input type="radio" id="star5" name="rating" value="5" required><label for="star5" title="Amazing"></label>
-                    <input type="radio" id="star4" name="rating" value="4"><label for="star4" title="Good"></label>
-                    <input type="radio" id="star3" name="rating" value="3"><label for="star3" title="Average"></label>
-                    <input type="radio" id="star2" name="rating" value="2"><label for="star2" title="Poor"></label>
-                    <input type="radio" id="star1" name="rating" value="1"><label for="star1" title="Terrible"></label>
+                    <input type="radio" id="star5" name="rating" value="5" required>
+                    <label for="star5">★</label>
+                    <input type="radio" id="star4" name="rating" value="4">
+                    <label for="star4">★</label>
+                    <input type="radio" id="star3" name="rating" value="3">
+                    <label for="star3">★</label>
+                    <input type="radio" id="star2" name="rating" value="2">
+                    <label for="star2">★</label>
+                    <input type="radio" id="star1" name="rating" value="1">
+                    <label for="star1">★</label>
                 </div>
-                <p class="rating-feedback" id="ratingFeedback">Select a star to rate your experience.</p>
+                <p class="rating-feedback" id="ratingFeedback">Select a star to rate your experience</p>
             </fieldset>
 
             <fieldset>
@@ -104,7 +110,10 @@
                 <legend>Publishing Options</legend>
                 <div class="form-group toggle-group">
                     <label for="anonymous">Post Anonymously</label>
-                    <input type="checkbox" id="anonymous" name="anonymous" class="switch">
+                    <label class="switch">
+                        <input type="checkbox" id="anonymous" name="anonymous">
+                        <span class="slider"></span>
+                    </label>
                 </div>
                 <small class="toggle-description" id="switchDescription">Your review will be posted under your profile name.</small>
             </fieldset>
