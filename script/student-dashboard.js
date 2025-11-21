@@ -85,7 +85,8 @@ async function fetchAndDisplayListings() {
     loadingSpinner.style.display = "flex";
     listingContainer.innerHTML = ""; // Clear existing listings
 
-    // CRITICAL FIX: Using 'landlord_id' (the FK column name) for the join to 'users' table
+    // FIX: Removed the embedded comment which was causing the 400 Bad Request error.
+    // The query now correctly uses 'landlord_id' for the join path.
     const { data: listings, error } = await supabase
         .from("listings")
         .select(`
@@ -94,7 +95,7 @@ async function fetchAndDisplayListings() {
             location,
             price,
             image_url, 
-            landlord_id(email), // FIX: Use the FK column name for the join path
+            landlord_id(email), 
             property_details(property_type),
             reviews(rating)
         `) 
@@ -120,7 +121,7 @@ async function fetchAndDisplayListings() {
         // Get property type (accessing the joined data)
         const propertyType = listing.property_details.length > 0 ? listing.property_details[0].property_type : 'N/A';
         
-        // CRITICAL FIX: Access the email using the new join property name 'landlord_id'
+        // Access the email using the 'landlord_id' property
         const landlordEmail = listing.landlord_id ? listing.landlord_id.email : 'contact@landlord.com'; 
         
         listingContainer.innerHTML += createListingCard(listing, propertyType, avgRating, landlordEmail);
@@ -139,7 +140,7 @@ function calculateAverageRating(ratingsArray) {
     return (sum / ratingsArray.length).toFixed(1);
 }
 
-// FIX: Rewritten to match the existing styles.css structure
+// HTML generation function using your existing CSS classes
 function createListingCard(listing, propertyType, avgRating, landlordEmail) {
     const starRatingHTML = generateStarRating(avgRating);
     const imageUrl = listing.image_url || './images/default-listing.jpg'; // Use a default image if none exists
