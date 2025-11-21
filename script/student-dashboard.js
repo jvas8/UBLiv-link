@@ -91,7 +91,7 @@ async function fetchAndDisplayListings() {
             price,
             landlord_id(email), 
             property_details(property_type, bedrooms, description),
-            reviews(rating)
+            reviews(*)
         `)
         .eq("verification_status", "verified")
         .order("created_at", { ascending: false });
@@ -308,11 +308,21 @@ function displayListingsWithPhotos(listings, photosByListing) {
     });
 }
 
-function calculateAverageRating(ratingsArray) {
-    if (!ratingsArray || ratingsArray.length === 0) return 0;
+function calculateAverageRating(reviewsArray) {
+    if (!reviewsArray || reviewsArray.length === 0) return 0;
     
-    const sum = ratingsArray.reduce((acc, current) => acc + current.rating, 0);
-    return (sum / ratingsArray.length).toFixed(1);
+    // Extract ratings from reviews array - handle both object structure and direct rating values
+    const ratings = reviewsArray.map(review => {
+        // If review is an object with rating property
+        if (typeof review === 'object' && review !== null && 'rating' in review) {
+            return review.rating;
+        }
+        // If it's already a rating value (shouldn't happen with our query but just in case)
+        return review;
+    });
+    
+    const sum = ratings.reduce((acc, current) => acc + current, 0);
+    return (sum / ratings.length).toFixed(1);
 }
 
 /**
@@ -320,6 +330,7 @@ function calculateAverageRating(ratingsArray) {
  */
 function createListingCard(listing, propertyType, avgRating, landlordEmail, photos) {
     const starRatingHTML = generateStarRating(avgRating);
+    const reviewCount = listing.reviews ? listing.reviews.length : 0;
     
     // Generate carousel HTML
     const carouselHTML = generateImageCarousel(photos, listing.name);
@@ -336,7 +347,7 @@ function createListingCard(listing, propertyType, avgRating, landlordEmail, phot
 
                 <div class="rating-info">
                     ${starRatingHTML}
-                    <span class="avg-text">(${avgRating > 0 ? avgRating : 'No Reviews'})</span>
+                    <span class="avg-text">(${avgRating > 0 ? avgRating : 'No Reviews'}${reviewCount > 0 ? `, ${reviewCount} review${reviewCount !== 1 ? 's' : ''}` : ''})</span>
                 </div>
 
                 <p class="listing-price">
@@ -588,7 +599,7 @@ async function refreshListingReviews(listingId) {
     // Fetch updated reviews for this specific listing
     const { data: updatedReviews, error } = await supabase
         .from("reviews")
-        .select("rating")
+        .select("*")
         .eq("listing_id", listingId);
 
     if (error) {
@@ -612,6 +623,7 @@ async function refreshListingReviews(listingId) {
 function updateListingCardRating(listingId, reviews) {
     const avgRating = calculateAverageRating(reviews);
     const starRatingHTML = generateStarRating(avgRating);
+    const reviewCount = reviews ? reviews.length : 0;
     
     // Find all listing cards
     const listingCards = document.querySelectorAll('.listing-card');
@@ -624,7 +636,7 @@ function updateListingCardRating(listingId, reviews) {
             if (ratingInfo) {
                 ratingInfo.innerHTML = `
                     ${starRatingHTML}
-                    <span class="avg-text">(${avgRating > 0 ? avgRating : 'No Reviews'})</span>
+                    <span class="avg-text">(${avgRating > 0 ? avgRating : 'No Reviews'}${reviewCount > 0 ? `, ${reviewCount} review${reviewCount !== 1 ? 's' : ''}` : ''})</span>
                 `;
             }
         }
