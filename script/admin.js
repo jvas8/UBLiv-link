@@ -67,13 +67,15 @@ async function fetchOverviewData() {
 
     try {
         // 1. Listings Pending Verification (verification_status = 'pending')
-        let { count: pendingCount, error: pendingError } = await supabase
-            .from('listings')
-            .select('*', { count: 'exact', head: true })
-            .eq('verification_status', 'pending');
+let { count: pendingCount, error: pendingError } = await supabase
+        .from('listings')
+        .select('*', { count: 'exact', head: true })
+        .eq('verification_status', 'pending');
 
-        if (pendingError) throw pendingError;
-        results.pendingVerificationCount = pendingCount || 0;
+    if (pendingError) {
+        // Log the exact Supabase error for troubleshooting RLS
+        console.error("Supabase Error fetching pending count:", pendingError.message);
+    }
 
         // 2. Total Active Listings (availability = TRUE)
         let { count: activeCount, error: activeError } = await supabase
@@ -96,7 +98,7 @@ async function fetchOverviewData() {
     } catch (error) {
         console.error("Fatal Error fetching overview data:", error.message);
         return {
-            pendingVerificationCount: 'N/A',
+            pendingVerificationCount: pendingCount || 0,
             totalActiveListings: 'N/A',
             totalLandlords: 'N/A',
         };
