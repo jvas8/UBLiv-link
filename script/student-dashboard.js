@@ -78,7 +78,10 @@ async function fetchAndDisplayListings() {
     loadingSpinner.style.display = "flex";
     listingContainer.innerHTML = "";
 
-    // FIXED QUERY: Properly access property_details and photos
+    // First, let's debug what's happening with the data
+    console.log("Starting to fetch listings...");
+
+    // Try a different approach - fetch listings and photos separately
     const { data: listings, error } = await supabase
         .from("listings")
         .select(`
@@ -86,7 +89,6 @@ async function fetchAndDisplayListings() {
             name,
             location,
             price,
-            photos(photo_url), 
             landlord_id(email), 
             property_details(property_type, bedrooms, description),
             reviews(rating)
@@ -102,30 +104,58 @@ async function fetchAndDisplayListings() {
         return;
     }
     
-    console.log("Fetched listings:", listings); // Debug log
+    console.log("Fetched listings:", listings);
     
     if (listings.length === 0) {
         listingContainer.innerHTML = `<p class="info-message">No approved listings are currently available.</p>`;
         return;
     }
 
+    // Fetch photos for all listings in a separate query
+    const { data: allPhotos, error: photosError } = await supabase
+        .from("photos")
+        .select("listing_id, photo_url")
+        .in("listing_id", listings.map(l => l.listing_id));
+
+    if (photosError) {
+        console.error("Error fetching photos:", photosError);
+    } else {
+        console.log("Fetched all photos:", allPhotos);
+    }
+
+    // Group photos by listing_id
+    const photosByListing = {};
+    if (allPhotos) {
+        allPhotos.forEach(photo => {
+            if (!photosByListing[photo.listing_id]) {
+                photosByListing[photo.listing_id] = [];
+            }
+            photosByListing[photo.listing_id].push(photo);
+        });
+    }
+
+    console.log("Photos grouped by listing:", photosByListing);
+
     listings.forEach(listing => {
         const avgRating = calculateAverageRating(listing.reviews);
         
-        // DEBUG: Check what property_details contains
-        console.log("Listing property_details:", listing.property_details);
-        
-        // FIX: Properly access property_type - property_details is an array of objects
-        const propertyType = listing.property_details && listing.property_details.length > 0 
-            ? listing.property_details[0].property_type 
-            : 'N/A';
+        // FIX: Handle property_details whether it's an object or array
+        let propertyType = 'N/A';
+        if (listing.property_details) {
+            if (Array.isArray(listing.property_details)) {
+                propertyType = listing.property_details.length > 0 ? listing.property_details[0].property_type : 'N/A';
+            } else {
+                // It's an object, access directly
+                propertyType = listing.property_details.property_type || 'N/A';
+            }
+        }
         
         const landlordEmail = listing.landlord_id ? listing.landlord_id.email : 'contact@landlord.com';
         
-        // FIX: Get all photos for the carousel
-        const photos = listing.photos || [];
+        // FIX: Get photos from our grouped photos object
+        const photos = photosByListing[listing.listing_id] || [];
         
-        console.log("Listing photos:", photos); // Debug log
+        console.log(`Listing ${listing.name} has ${photos.length} photos`);
         
         listingContainer.innerHTML += createListingCard(listing, propertyType, avgRating, landlordEmail, photos);
     });
@@ -202,7 +232,7 @@ function generateImageCarousel(photos, listingName) {
     photos.forEach((photo, index) => {
         const isActive = index === 0 ? 'active' : '';
         
-        // Use the photo URL directly - they should be full URLs from the SQL insert
+        // Use the photo URL directly
         const photoUrl = photo.photo_url;
         
         slidesHTML += `
