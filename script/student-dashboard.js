@@ -85,8 +85,7 @@ async function fetchAndDisplayListings() {
     loadingSpinner.style.display = "flex";
     listingContainer.innerHTML = ""; // Clear existing listings
 
-    // FIX: Removed the embedded comment which was causing the 400 Bad Request error.
-    // The query now correctly uses 'landlord_id' for the join path.
+    // FIX: Replaced 'image_url' with 'photos(photo_url)' to join the photos table
     const { data: listings, error } = await supabase
         .from("listings")
         .select(`
@@ -94,7 +93,7 @@ async function fetchAndDisplayListings() {
             name,
             location,
             price,
-            image_url, 
+            photos(photo_url), // FIX: Join the photos table to get the URL(s)
             landlord_id(email), 
             property_details(property_type),
             reviews(rating)
@@ -124,7 +123,11 @@ async function fetchAndDisplayListings() {
         // Access the email using the 'landlord_id' property
         const landlordEmail = listing.landlord_id ? listing.landlord_id.email : 'contact@landlord.com'; 
         
-        listingContainer.innerHTML += createListingCard(listing, propertyType, avgRating, landlordEmail);
+        // FIX: Access the first photo URL from the joined 'photos' array
+        const firstPhoto = listing.photos.length > 0 ? listing.photos[0] : null;
+        const imageUrl = firstPhoto ? firstPhoto.photo_url : './images/default-listing.jpg'; 
+        
+        listingContainer.innerHTML += createListingCard(listing, propertyType, avgRating, landlordEmail, imageUrl);
     });
 
     // Add event listeners for the 'Leave a Review' buttons
@@ -140,10 +143,10 @@ function calculateAverageRating(ratingsArray) {
     return (sum / ratingsArray.length).toFixed(1);
 }
 
-// HTML generation function using your existing CSS classes
-function createListingCard(listing, propertyType, avgRating, landlordEmail) {
+// NOTE: Added imageUrl parameter
+function createListingCard(listing, propertyType, avgRating, landlordEmail, imageUrl) {
     const starRatingHTML = generateStarRating(avgRating);
-    const imageUrl = listing.image_url || './images/default-listing.jpg'; // Use a default image if none exists
+    // imageUrl is now passed in
     
     return `
         <div class="listing-card">
