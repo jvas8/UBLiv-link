@@ -90,12 +90,12 @@ async function fetchAndDisplayListings() {
         .from("listings")
         .select(`
             listing_id,
-            name, // from listings table
+            name,
             location,
             price,
-            property_details(property_type), // from property_details table
-            reviews(rating) // from reviews table
-        `)
+            property_details(property_type),
+            reviews(rating)
+        `) // FIX: Removed inline comments that were causing a 400 Bad Request
         .eq("verification_status", "approved") // Only show approved listings
         .order("created_at", { ascending: false });
 
@@ -205,8 +205,7 @@ async function handleReviewSubmit(e) {
     const rating = document.querySelector('input[name="rating"]:checked')?.value;
     const reviewText = document.getElementById("reviewText").value;
     
-    // IMPORTANT: The 'reviews' schema requires 'description' for the review text, and does NOT include 'is_anonymous'.
-    // The submission below adheres to your schema: (user_id, listing_id, rating, description).
+    // The submission below adheres to your 'reviews' schema: (user_id, listing_id, rating, description).
 
     if (!rating) {
         alert("Please select an overall rating (1-5 stars).");
