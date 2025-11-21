@@ -323,9 +323,8 @@ function displayListingsWithPhotos(listings, photosByListing, reviewsByListing =
     
     // Display each listing
     listings.forEach(listing => {
-        // --- NEW: Assign reviews to the listing object before passing it down ---
+        // Assign reviews to the listing object before passing it down
         listing.reviews = reviewsByListing[listing.listing_id] || [];
-        // --- END NEW ---
         
         const avgRating = calculateAverageRating(listing.reviews);
         
@@ -354,16 +353,18 @@ function displayListingsWithPhotos(listings, photosByListing, reviewsByListing =
 function calculateAverageRating(reviewsArray) {
     if (!reviewsArray || reviewsArray.length === 0) return 0;
     
-    // Extract ratings from reviews array - handle both object structure and direct rating values
+    // Extract ratings from reviews array and ensure they are parsed as Integers
     const ratings = reviewsArray.map(review => {
         // If review is an object with rating property
         if (typeof review === 'object' && review !== null && 'rating' in review) {
-            return review.rating;
+            return parseInt(review.rating, 10); // <-- CRITICAL FIX: Ensure rating is a number
         }
-        // If it's already a rating value (shouldn't happen with our query but just in case)
-        return review;
-    });
+        // If it's already a rating value (less likely with current query)
+        return parseInt(review, 10); // <-- CRITICAL FIX: Ensure rating is a number
+    }).filter(rating => !isNaN(rating)); // Filter out any non-numeric results
     
+    if (ratings.length === 0) return 0;
+
     const sum = ratings.reduce((acc, current) => acc + current, 0);
     return (sum / ratings.length).toFixed(1);
 }
@@ -373,6 +374,7 @@ function calculateAverageRating(reviewsArray) {
  */
 function createListingCard(listing, propertyType, avgRating, landlordEmail, photos) {
     const starRatingHTML = generateStarRating(avgRating);
+    // review count is taken directly from the listing.reviews array attached earlier
     const reviewCount = listing.reviews ? listing.reviews.length : 0;
     
     // Generate carousel HTML
@@ -579,23 +581,22 @@ async function handleReviewSubmit(e) {
     }
 
     try {
-        // First verify the listing is still verified and user is a student
-        const { data: listing, error: listingError } = await supabase
-            .from("listings")
-            .select("verification_status")
-            .eq("listing_id", listingID)
-            .single();
+        // Run verification checks concurrently for efficiency
+        const [listingResult, userResult] = await Promise.all([
+            supabase.from("listings").select("verification_status").eq("listing_id", listingID).single(),
+            supabase.from("users").select("role").eq("user_id", userID).single()
+        ]);
+        
+        const listing = listingResult.data;
+        const listingError = listingResult.error;
+        const user = userResult.data;
+        const userError = userResult.error;
+
 
         if (listingError || !listing || listing.verification_status !== 'verified') {
             alert("Cannot submit review: Listing is not available or not verified.");
             return;
         }
-
-        const { data: user, error: userError } = await supabase
-            .from("users")
-            .select("role")
-            .eq("user_id", userID)
-            .single();
 
         if (userError || !user || user.role !== 'student') {
             alert("Only students can submit reviews.");
@@ -642,7 +643,7 @@ async function refreshListingReviews(listingId) {
     // Fetch updated reviews for this specific listing
     const { data: updatedReviews, error } = await supabase
         .from("reviews")
-        .select("*")
+        .select(`listing_id, rating`) // Fetching only rating and ID is sufficient
         .eq("listing_id", listingId);
 
     if (error) {
@@ -653,7 +654,8 @@ async function refreshListingReviews(listingId) {
     // Update the reviews array for this listing in our global allListings
     const listingIndex = allListings.findIndex(listing => listing.listing_id === listingId);
     if (listingIndex !== -1) {
-        allListings[listingIndex].reviews = updatedReviews || [];
+        // This is where the reviews data is persistently added to the listing object
+        allListings[listingIndex].reviews = updatedReviews || []; 
         
         // Find the listing card in the DOM and update its rating
         updateListingCardRating(listingId, updatedReviews);
