@@ -145,9 +145,17 @@ document.addEventListener('DOMContentLoaded', () => {
             return [];
         }
         
+        // FIXED: Use proper single .select() with all required fields
         const { data: listings, error } = await supabase
             .from('listings')
-            .select('listing_id, name, price, availability, property_details(bedrooms), reviews(rating)')
+            .select(`
+                listing_id, 
+                name, 
+                price, 
+                availability, 
+                property_details(bedrooms), 
+                reviews(rating)
+            `)
             .eq('landlord_id', landlordId);
 
         if (error) {
@@ -192,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderRecentActivity();
     }
     
-    // --- NEW FUNCTION: Render Recent Activity on Overview Page ---
+    // --- FIXED FUNCTION: Render Recent Activity on Overview Page ---
     async function renderRecentActivity() {
         const landlordId = await getCurrentLandlordId();
         recentActivityContainer.innerHTML = '<p>Loading recent activity...</p>';
@@ -204,7 +212,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const { data: reviews, error } = await supabase
             .from('reviews')
-            .select('rating, description, created_at, listings(name, landlord_id)')
+            .select(`
+                rating, 
+                description, 
+                created_at, 
+                listings(name, landlord_id)
+            `)
             .eq('listings.landlord_id', landlordId)
             .order('created_at', { ascending: false })
             .limit(5);
@@ -215,12 +228,19 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        if (!reviews || reviews.length === 0) {
+        // FIXED: Add defensive check for null/undefined data
+        if (!reviews || !Array.isArray(reviews) || reviews.length === 0) {
             recentActivityContainer.innerHTML = '<p>No recent activity to display.</p>';
             return;
         }
 
         const activityHTML = reviews.map(review => {
+            // FIXED: Add defensive check for individual review objects
+            if (!review || !review.listings) {
+                console.warn('Invalid review data encountered:', review);
+                return '';
+            }
+            
             const date = new Date(review.created_at).toLocaleDateString();
             const ratingText = '★'.repeat(Math.round(review.rating));
             const address = review.listings.name || 'Unknown Address';
@@ -298,7 +318,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const { data: reviews, error } = await supabase
             .from('reviews')
-            .select('listing_id, rating, description, created_at, user_id, listings(name, landlord_id)')
+            .select(`
+                listing_id, 
+                rating, 
+                description, 
+                created_at, 
+                user_id, 
+                listings(name, landlord_id)
+            `)
             .eq('listings.landlord_id', landlordId)
             .order('created_at', { ascending: false });
         
@@ -314,12 +341,19 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderAllFeedback(reviews) {
         allFeedbackContainer.innerHTML = '';
 
-        if (!reviews || reviews.length === 0) {
+        // FIXED: Add defensive check for null/undefined data
+        if (!reviews || !Array.isArray(reviews) || reviews.length === 0) {
             allFeedbackContainer.innerHTML = '<p>No feedback has been submitted yet.</p>';
             return;
         }
 
         reviews.forEach(review => {
+            // FIXED: Add defensive check for individual review objects
+            if (!review || !review.listings) {
+                console.warn('Invalid feedback data encountered:', review);
+                return;
+            }
+            
             const date = new Date(review.created_at).toLocaleDateString();
             const ratingText = '★'.repeat(Math.round(review.rating));
             const reviewerDisplay = review.user_id ? `User ID: ${review.user_id.substring(0, 8)}...` : 'Anonymous';
@@ -348,7 +382,12 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const { data: listing, error } = await supabase
             .from('listings')
-            .select('name, price, availability, property_details(bedrooms, description)')
+            .select(`
+                name, 
+                price, 
+                availability, 
+                property_details(bedrooms, description)
+            `)
             .eq('listing_id', listingID)
             .single();
 
@@ -422,7 +461,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 1500);
     }
 
-    // --- UPDATED FUNCTION: Handle New Listing Submission with Full Photo Upload Logic ---
+    // --- FIXED FUNCTION: Handle New Listing Submission with Full Photo Upload Logic ---
     async function handleNewListingSubmit(e) {
         e.preventDefault();
         const form = e.target;
@@ -444,9 +483,15 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             // --- Step A: Insert into the 'listings' table ---
             
+            // FIXED: Validate required fields before submission
+            const listingName = formData.get('name');
+            if (!listingName || listingName.trim() === '') {
+                throw new Error('Listing Name is required and cannot be empty.');
+            }
+            
             const listingData = {
                 landlord_id: landlordId,
-                name: formData.get('name'),
+                name: listingName.trim(),
                 location: formData.get('location'),
                 price: parseFloat(formData.get('price')),
                 leasing: formData.get('leasing'),
@@ -536,7 +581,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
         } catch (error) {
             console.error('New Listing Submission Failed:', error);
-            alert('A severe error occurred during listing submission. Check the console for details.');
+            alert(`Error during submission: ${error.message}`);
         } finally {
             submitBtn.disabled = false;
             submitBtn.textContent = 'Publish Listing';
