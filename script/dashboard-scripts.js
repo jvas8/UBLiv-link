@@ -463,11 +463,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- FIXED FUNCTION: Handle New Listing Submission with Full Photo Upload Logic ---
     async function handleNewListingSubmit(e) {
-        e.preventDefault();
-        const form = e.target;
-        const formData = new FormData(form);
-        const submitBtn = form.querySelector('.submit-btn');
+e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+    const landlord_id = await getCurrentLandlordId();
 
+    if (!landlord_id) {
+        alert('Authentication error: Could not find landlord ID.');
+        return;
+    }
+
+    // Prepare the listing data object
+    const newListingData = {
+        landlord_id: landlord_id, // Mandatory foreign key
+        title: formData.get('title'),
+        address: formData.get('address'),
+        // 🚨 FIX: Add the 'location' column using the 'address' value
+        location: formData.get('address'), 
+        location_type: formData.get('location_type'),
+        beds: parseInt(formData.get('beds')),
+        baths: parseFloat(formData.get('baths')),
+        rent_price: parseFloat(formData.get('rent_price')),
+        description: formData.get('description'),
+    };
+
+    const { data, error } = await supabase
+        .from('listings')
+        .insert([newListingData]);
+
+    if (error) {
+        console.error("Listing Insert Error:", error.message);
+        alert("New Listing Submission Failed: Error: " + error.message);
+    } else {
+        alert("New Listing published successfully!");
+        form.reset();
+        switchModule('listings');
+        fetchListingsAndDisplay();
+    }
         submitBtn.disabled = true;
         submitBtn.textContent = 'Publishing...';
         
