@@ -105,7 +105,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const editMessage = document.getElementById('edit-message');
 
     // Listing Edit Form Fields
-    const editAddress = document.getElementById('edit-address');
+    const editName = document.getElementById('edit-name');
+    const editLocation = document.getElementById('edit-location');
     const editPrice = document.getElementById('edit-price');
     const editBedrooms = document.getElementById('edit-bedrooms');
     const editDescription = document.getElementById('edit-description');
@@ -151,6 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .select(`
                 listing_id, 
                 name, 
+                location,
                 price, 
                 availability, 
                 property_details(bedrooms), 
@@ -216,7 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 rating, 
                 description, 
                 created_at, 
-                listings(name, landlord_id)
+                listings(name, location, landlord_id)
             `)
             .eq('listings.landlord_id', landlordId)
             .order('created_at', { ascending: false })
@@ -243,7 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const date = new Date(review.created_at).toLocaleDateString();
             const ratingText = '★'.repeat(Math.round(review.rating));
-            const address = review.listings.name || 'Unknown Address';
+            const location = review.listings.location || 'Unknown Location';
 
             return `
                 <div class="recent-activity-card">
@@ -252,7 +254,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="activity-date">${date}</span>
                     </div>
                     <p class="activity-listing">
-                        Listing: <strong>${address}</strong>
+                        Listing: <strong>${location}</strong>
                     </p>
                     <p class="activity-excerpt">"${review.description ? review.description.substring(0, 80) + '...' : 'No description'}"</p>
                 </div>
@@ -272,7 +274,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const tableHTML = `
             <div class="table-header table-row">
-                <div>Address</div>
+                <div>Location</div>
                 <div>Price</div>
                 <div>Beds</div>
                 <div>Rating</div>
@@ -288,7 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 return `
                     <div class="table-row" data-listing-id="${listing.listing_id}">
-                        <div>${listing.name}</div>
+                        <div>${listing.location}</div>
                         <div>$${listing.price}</div>
                         <div>${bedrooms}</div>
                         <div>${ratingDisplay}</div>
@@ -324,7 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 description, 
                 created_at, 
                 user_id, 
-                listings(name, landlord_id)
+                listings(name, location, landlord_id)
             `)
             .eq('listings.landlord_id', landlordId)
             .order('created_at', { ascending: false });
@@ -365,7 +367,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="feedback-date">${date}</div>
                     </div>
                     <p class="feedback-listing">
-                        Listing: ${review.listings.name || 'Unknown Address'}
+                        Listing: ${review.listings.location || 'Unknown Location'}
                     </p>
                     <p class="feedback-content">"${review.description || 'No comment provided.'}"</p>
                     <p class="feedback-meta">Reviewed by: ${reviewerDisplay}</p>
@@ -384,6 +386,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .from('listings')
             .select(`
                 name, 
+                location,
                 price, 
                 availability, 
                 property_details(bedrooms, description)
@@ -397,7 +400,8 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        editAddress.value = listing.name; 
+        editName.value = listing.name; 
+        editLocation.value = listing.location;
         editPrice.value = listing.price;
         editBedrooms.value = listing.property_details ? listing.property_details.bedrooms : '';
         editDescription.value = listing.property_details ? listing.property_details.description || '' : '';
@@ -418,7 +422,8 @@ document.addEventListener('DOMContentLoaded', () => {
         editMessage.classList.remove('error', 'success');
 
         const listingUpdateData = {
-            name: editAddress.value, 
+            name: editName.value, 
+            location: editLocation.value,
             price: parseInt(editPrice.value, 10),
             availability: editAvailability.value === 'true' 
         };
@@ -463,43 +468,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- FIXED FUNCTION: Handle New Listing Submission with Full Photo Upload Logic ---
     async function handleNewListingSubmit(e) {
-e.preventDefault();
-    const form = e.target;
-    const formData = new FormData(form);
-    const landlord_id = await getCurrentLandlordId();
+        e.preventDefault();
+        const form = e.target;
+        const formData = new FormData(form);
+        const submitBtn = form.querySelector('.submit-btn');
 
-    if (!landlord_id) {
-        alert('Authentication error: Could not find landlord ID.');
-        return;
-    }
-
-    // Prepare the listing data object
-    const newListingData = {
-        landlord_id: landlord_id, // Mandatory foreign key
-        title: formData.get('title'),
-        address: formData.get('address'),
-        // 🚨 FIX: Add the 'location' column using the 'address' value
-        location: formData.get('address'), 
-        location_type: formData.get('location_type'),
-        beds: parseInt(formData.get('beds')),
-        baths: parseFloat(formData.get('baths')),
-        rent_price: parseFloat(formData.get('rent_price')),
-        description: formData.get('description'),
-    };
-
-    const { data, error } = await supabase
-        .from('listings')
-        .insert([newListingData]);
-
-    if (error) {
-        console.error("Listing Insert Error:", error.message);
-        alert("New Listing Submission Failed: Error: " + error.message);
-    } else {
-        alert("New Listing published successfully!");
-        form.reset();
-        switchModule('listings');
-        fetchListingsAndDisplay();
-    }
         submitBtn.disabled = true;
         submitBtn.textContent = 'Publishing...';
         
@@ -520,11 +493,16 @@ e.preventDefault();
             if (!listingName || listingName.trim() === '') {
                 throw new Error('Listing Name is required and cannot be empty.');
             }
+
+            const listingLocation = formData.get('location');
+            if (!listingLocation || listingLocation.trim() === '') {
+                throw new Error('Location is required and cannot be empty.');
+            }
             
             const listingData = {
                 landlord_id: landlordId,
                 name: listingName.trim(),
-                location: formData.get('location'),
+                location: listingLocation.trim(),
                 price: parseFloat(formData.get('price')),
                 leasing: formData.get('leasing'),
                 email: formData.get('email') || null,
@@ -546,6 +524,7 @@ e.preventDefault();
                 listing_id: newListingId,
                 property_type: formData.get('property_type'),
                 bedrooms: parseInt(formData.get('bedrooms')),
+                bathrooms: parseInt(formData.get('bathrooms')),
                 description: formData.get('description'),
             };
 

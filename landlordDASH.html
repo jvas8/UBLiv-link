@@ -73,25 +73,25 @@
         <section id="edit-listing" class="landlord-module">
           <h2>
             Edit Listing:
-            <span id="edit-listing-address">[Loading Address...]</span>
+            <span id="edit-listing-location">[Loading Location...]</span>
           </h2>
           <p id="edit-message" class="message-text"></p>
 
           <form id="edit-listing-form">
             <input type="hidden" id="edit-listing-id" name="listing_id" />
             <div class="form-group">
-              <label for="new-name">Listing Name*</label>
+              <label for="edit-name">Listing Name*</label>
               <input
                 type="text"
-                id="new-name"
+                id="edit-name"
                 name="name"
                 required
                 placeholder="e.g., The Campus View Apartments"
               />
             </div>
             <div class="form-group">
-              <label for="edit-address">Address</label>
-              <input type="text" id="edit-address" required />
+              <label for="edit-location">Location</label>
+              <input type="text" id="edit-location" required />
             </div>
             <div class="form-group">
               <label for="edit-price">Monthly Price ($)</label>
@@ -145,23 +145,23 @@
                   />
                 </div>
                 <div class="form-group span-2">
-                  <label for="new-address">Full Address</label>
+                  <label for="new-location">Full Location</label>
                   <input
                     type="text"
-                    id="new-address"
-                    name="address"
+                    id="new-location"
+                    name="location"
                     required
                     placeholder="Street, City, Postal Code"
                   />
                 </div>
                 <div class="form-group">
                   <label for="new-propertyType">Property Type</label>
-                  <select id="new-propertyType" name="propertyType" required>
+                  <select id="new-propertyType" name="property_type" required>
                     <option value="">Select Type</option>
                     <option value="apartment">Apartment</option>
                     <option value="house">House</option>
                     <option value="room">Single Room</option>
-                    <option value="room">Studio</option>
+                    <option value="studio">Studio</option>
                   </select>
                 </div>
                 <div class="form-group">
@@ -201,8 +201,8 @@
                   />
                 </div>
                 <div class="form-group">
-                  <label for="new-leaseTerm">Min. Lease</label>
-                  <select id="new-leaseTerm" name="leaseTerm" required>
+                  <label for="new-leasing">Lease Type</label>
+                  <select id="new-leasing" name="leasing" required>
                     <option value="12 Months">12 Months</option>
                     <option value="9 Months (Academic)">
                       9 Months (Academic)
@@ -223,7 +223,22 @@
             </fieldset>
 
             <fieldset>
-              <legend>3. Photos & Media</legend>
+              <legend>3. Contact Information</legend>
+              <div class="fieldset-content">
+                <div class="form-group">
+                  <label for="new-email">Contact Email</label>
+                  <input
+                    type="email"
+                    id="new-email"
+                    name="email"
+                    placeholder="your-email@example.com"
+                  />
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset>
+              <legend>4. Photos & Media</legend>
               <div class="form-group">
                 <p>Photo upload is conceptual here.</p>
                 <input
