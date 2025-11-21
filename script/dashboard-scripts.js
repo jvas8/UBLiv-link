@@ -422,74 +422,128 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 1500);
     }
 
-    // --- NEW FUNCTION: Handle New Listing Submission ---
+    // --- UPDATED FUNCTION: Handle New Listing Submission with Full Photo Upload Logic ---
     async function handleNewListingSubmit(e) {
         e.preventDefault();
-        newListingMessage.textContent = 'Publishing listing...';
-        newListingMessage.classList.remove('error', 'success');
+        const form = e.target;
+        const formData = new FormData(form);
+        const submitBtn = form.querySelector('.submit-btn');
 
-        const landlordId = await getCurrentLandlordId();
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Publishing...';
+        
+        // 1. Get Landlord ID
+        const landlordId = await getCurrentLandlordId(); 
         if (!landlordId) {
-            newListingMessage.textContent = 'Error: You must be logged in to post a listing.';
-            newListingMessage.classList.add('error');
+            alert('Authentication error: Landlord ID not found. Please log in again.');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Publish Listing';
             return;
         }
 
-        // 1. Collect Data from the Form
-        const form = e.target;
-        const address = form.address.value; 
-        const propertyType = form.propertyType.value;
-        const bedrooms = parseInt(form.bedrooms.value, 10);
-        const price = parseFloat(form.price.value);
-        const leaseTerm = form.leaseTerm.value;
-        const description = form.description.value;
-
         try {
-            // 2. Insert into 'listings' table
-            const { data: listingData, error: listingError } = await supabase
+            // --- Step A: Insert into the 'listings' table ---
+            
+            const listingData = {
+                landlord_id: landlordId,
+                name: formData.get('name'),
+                location: formData.get('location'),
+                price: parseFloat(formData.get('price')),
+                leasing: formData.get('leasing'),
+                email: formData.get('email') || null,
+            };
+
+            let { data: newListing, error: listingError } = await supabase
                 .from('listings')
-                .insert({
-                    landlord_id: landlordId,
-                    name: address,
-                    location: address,
-                    price: price,
-                    leasing: leaseTerm,
-                    availability: true,
-                    verification_status: 'pending'
-                })
-                .select('listing_id')
+                .insert([listingData])
+                .select('listing_id') 
                 .single();
 
-            if (listingError) throw listingError;
+            if (listingError) throw new Error('Listing Insert Error: ' + listingError.message);
+            
+            const newListingId = newListing.listing_id;
 
-            const newListingId = listingData.listing_id;
+            // --- Step B: Insert into the 'property_details' table ---
 
-            // 3. Insert into 'property_details' table
+            const propertyDetailsData = {
+                listing_id: newListingId,
+                property_type: formData.get('property_type'),
+                bedrooms: parseInt(formData.get('bedrooms')),
+                description: formData.get('description'),
+            };
+
             const { error: detailsError } = await supabase
                 .from('property_details')
-                .insert({
-                    listing_id: newListingId,
-                    property_type: propertyType,
-                    bedrooms: bedrooms,
-                    description: description
-                });
+                .insert([propertyDetailsData]);
+
+            if (detailsError) throw new Error('Property Details Insert Error: ' + detailsError.message);
+
+            // --- Step C: Handle Photo Upload and 'photos' table insert (FULL IMPLEMENTATION) ---
+            
+            const files = form.elements['photos[]'].files;
+            const photoRecords = [];
+            const bucketName = 'listing-images'; // NOTE: Ensure this bucket exists in Supabase Storage
+
+            if (files && files.length > 0) {
+                console.log(`Uploading ${files.length} photos...`);
                 
-            if (detailsError) throw detailsError;
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    // Create a unique path in storage: landlordId/listingId/timestamp_filename
+                    const filePath = `${landlordId}/${newListingId}/${Date.now()}_${file.name}`;
+                    
+                    // 1. Upload the file to Supabase Storage
+                    const { data: uploadData, error: uploadError } = await supabase.storage
+                        .from(bucketName)
+                        .upload(filePath, file);
 
-            newListingMessage.textContent = 'Listing published successfully!';
-            newListingMessage.classList.add('success');
+                    if (uploadError) {
+                        // Log the error but don't stop the whole process, just skip this photo
+                        console.error(`Error uploading file ${file.name}:`, uploadError.message);
+                        continue; 
+                    }
 
-            // 4. Navigate back to listings after success
-            setTimeout(() => {
-                form.reset();
-                switchModule('listings');
-                getLandlordListings();
-            }, 2000);
+                    // 2. Get the public URL for the uploaded file
+                    const { data: publicUrlData } = supabase.storage
+                        .from(bucketName)
+                        .getPublicUrl(uploadData.path); 
+                    
+                    // 3. Prepare the record for the public.photos table
+                    photoRecords.push({
+                        listing_id: newListingId,
+                        photo_url: publicUrlData.publicUrl
+                    });
+                }
+                
+                // 4. Insert all successful photo URLs into the public.photos table
+                if (photoRecords.length > 0) {
+                    const { error: photoInsertError } = await supabase
+                        .from('photos')
+                        .insert(photoRecords);
 
+                    if (photoInsertError) {
+                        // This is a critical warning, as images exist but links are missing from DB
+                        console.warn('CRITICAL: Photo URL insertion into DB failed:', photoInsertError.message);
+                        alert('Warning: Listing added, but photo links failed to save to the database.');
+                    }
+                }
+            }
+
+            // --- Final Success ---
+            const photoMessage = photoRecords.length > 0 ? ` with ${photoRecords.length} photo(s) added.` : `. No photos were included.`;
+            alert(`Listing "${listingData.name}" submitted successfully for verification${photoMessage}`);
+            form.reset();
+            
         } catch (error) {
-            console.error('Error creating new listing:', error);
-            newListingMessage.textContent = `Error creating listing: ${error.message}`;
-            newListingMessage.classList.add('error');
+            console.error('New Listing Submission Failed:', error);
+            alert('A severe error occurred during listing submission. Check the console for details.');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Publish Listing';
+            
+            // Clean up and refresh UI
+            switchModule('listings'); 
+            getLandlordListings(); // Refresh the listings to show the new one
         }
     }
 
