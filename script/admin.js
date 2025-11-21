@@ -66,47 +66,67 @@ async function fetchOverviewData() {
     const results = {};
 
     try {
-        // 1. Listings Pending Verification (verification_status = 'pending')
-let { count: pendingCount, error: pendingError } = await supabase
-        .from('listings')
-        .select('*', { count: 'exact', head: true })
-        .eq('verification_status', 'pending');
+        console.log("Starting fetchOverviewData...");
 
-    if (pendingError) {
-        // Log the exact Supabase error for troubleshooting RLS
-        console.error("Supabase Error fetching pending count:", pendingError.message);
-    }
-
-        // 2. Total Active Listings (availability = TRUE)
-        let { count: activeCount, error: activeError } = await supabase
+        // 1. Listings Pending Verification
+        let { data: pendingData, count: pendingCount, error: pendingError } = await supabase
             .from('listings')
-            .select('*', { count: 'exact', head: true })
-            .eq('availability', true);
+            .select('*', { count: 'exact', head: false }); // Remove head: true to see actual data
 
-        if (activeError) throw activeError;
-        results.totalActiveListings = activeCount || 0;
+        console.log("Pending listings query result:", { pendingData, pendingCount, pendingError });
 
-        // 3. Total Landlord Registrations (role = 'landlord' in users table)
-        let { count: landlordCount, error: landlordError } = await supabase
-            .from('users') 
-            .select('*', { count: 'exact', head: true })
+        if (pendingError) {
+            console.error("Supabase Error fetching pending count:", pendingError);
+            results.pendingVerificationCount = 'Error';
+        } else {
+            // Filter for pending status manually
+            const pendingListings = pendingData ? pendingData.filter(listing => listing.verification_status === 'pending') : [];
+            results.pendingVerificationCount = pendingListings.length;
+            console.log("Filtered pending listings:", pendingListings);
+        }
+
+        // 2. Total Active Listings
+        let { data: activeData, count: activeCount, error: activeError } = await supabase
+            .from('listings')
+            .select('*', { count: 'exact', head: false });
+
+        console.log("Active listings query result:", { activeData, activeCount, activeError });
+
+        if (activeError) {
+            console.error("Error fetching active listings:", activeError);
+            results.totalActiveListings = 'Error';
+        } else {
+            const activeListings = activeData ? activeData.filter(listing => listing.availability === true) : [];
+            results.totalActiveListings = activeListings.length;
+        }
+
+        // 3. Total Landlord Registrations
+        let { data: landlordData, count: landlordCount, error: landlordError } = await supabase
+            .from('users')
+            .select('*', { count: 'exact', head: false })
             .eq('role', 'landlord');
 
-        if (landlordError) throw landlordError;
-        results.totalLandlords = landlordCount || 0;
+        console.log("Landlord query result:", { landlordData, landlordCount, landlordError });
+
+        if (landlordError) {
+            console.error("Error fetching landlords:", landlordError);
+            results.totalLandlords = 'Error';
+        } else {
+            results.totalLandlords = landlordCount || 0;
+        }
 
     } catch (error) {
-        console.error("Fatal Error fetching overview data:", error.message);
+        console.error("Fatal Error fetching overview data:", error);
         return {
-            pendingVerificationCount: pendingCount || 0,
-            totalActiveListings: 'N/A',
-            totalLandlords: 'N/A',
+            pendingVerificationCount: 'Error',
+            totalActiveListings: 'Error',
+            totalLandlords: 'Error',
         };
     }
     
+    console.log("Final results:", results);
     return results;
 }
-
 /**
  * Renders the fetched data into the overview cards in the DOM.
  */
