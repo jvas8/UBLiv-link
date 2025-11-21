@@ -1,4 +1,4 @@
-// admin.js
+// admin.js - CORRECTED
 
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -25,15 +25,15 @@ async function checkAuthAndRedirect() {
 
     currentUserID = session.user.id;
 
-    // Check the user's role in the profiles table
-    const { data: profile, error: profileError } = await supabase
-        .from('profiles')
+    // 🚨 CORRECTION: Check the user's role in the 'users' table, matching the Auth UUID to 'auth_id'
+    const { data: user, error: userError } = await supabase
+        .from('users') // <--- Corrected table name
         .select('role')
-        .eq('user_id', currentUserID)
+        .eq('auth_id', currentUserID) // <--- Use 'auth_id' to match Supabase Auth UUID
         .single();
 
-    if (profileError || !profile || profile.role !== 'admin') {
-        console.error("User is not an admin or profile not found.", profileError);
+    if (userError || !user || user.role !== 'admin') {
+        console.error("User is not an admin or profile not found.", userError);
         alert("Access Denied. You must be an administrator to view this page.");
         // Sign out and redirect if not an admin
         await supabase.auth.signOut();
@@ -51,27 +51,27 @@ async function fetchOverviewData() {
     const results = {};
 
     try {
-        // 1. Listings Pending Verification (is_verified = FALSE)
+        // 1. Listings Pending Verification (verification_status = 'pending')
         let { count: pendingCount, error: pendingError } = await supabase
             .from('listings')
             .select('*', { count: 'exact', head: true })
-            .eq('is_verified', false);
+            .eq('verification_status', 'pending'); // 🚨 CORRECTION: Use 'verification_status' column
 
         if (pendingError) throw pendingError;
         results.pendingVerificationCount = pendingCount || 0;
 
-        // 2. Total Active Listings (is_active = TRUE)
+        // 2. Total Active Listings (availability = TRUE)
         let { count: activeCount, error: activeError } = await supabase
             .from('listings')
             .select('*', { count: 'exact', head: true })
-            .eq('is_active', true);
+            .eq('availability', true); // 🚨 CORRECTION: Use 'availability' column
 
         if (activeError) throw activeError;
         results.totalActiveListings = activeCount || 0;
 
-        // 3. Total Landlord Registrations (role = 'landlord' in profiles table)
+        // 3. Total Landlord Registrations (role = 'landlord' in users table)
         let { count: landlordCount, error: landlordError } = await supabase
-            .from('profiles')
+            .from('users') // 🚨 CORRECTION: Use 'users' table
             .select('*', { count: 'exact', head: true })
             .eq('role', 'landlord');
 
@@ -79,20 +79,23 @@ async function fetchOverviewData() {
         results.totalLandlords = landlordCount || 0;
 
         // 4. Critical Reviews Flagged (Assuming is_flagged = TRUE in a reviews table)
+        // NOTE: Your 'reviews' table schema does not include an 'is_flagged' column.
+        // This query will fail if the column is not added to the 'reviews' table.
         let { count: flaggedCount, error: flaggedError } = await supabase
-            .from('reviews') // Ensure you have a 'reviews' table
+            .from('reviews')
             .select('*', { count: 'exact', head: true })
-            .eq('is_flagged', true); // Assuming a column named 'is_flagged'
+            .eq('is_flagged', true); 
 
         if (flaggedError) {
-            console.warn("Could not fetch flagged reviews. Assuming 0.", flaggedError.message);
-            results.criticalReviewsFlagged = 0; // Use 0 if the table/column is missing
+            console.warn("Could not fetch flagged reviews. Missing 'is_flagged' column in 'reviews' table. Using 0.", flaggedError.message);
+            results.criticalReviewsFlagged = 0; 
         } else {
             results.criticalReviewsFlagged = flaggedCount || 0;
         }
 
     } catch (error) {
         console.error("Error fetching overview data:", error.message);
+        // Fallback for UI if multiple queries fail
         return {
             pendingVerificationCount: 'N/A',
             totalActiveListings: 'N/A',
@@ -114,17 +117,16 @@ function renderOverviewData(data) {
     document.getElementById('landlord-count').textContent = data.totalLandlords;
     document.getElementById('flagged-reviews-count').textContent = data.criticalReviewsFlagged;
     
-    // Verification Queue Progress Bar update
-    const totalPending = data.pendingVerificationCount;
+    // Verification Queue Progress Bar update (using pending count from DB)
+    const totalPending = parseInt(data.pendingVerificationCount);
     const mockVerifiedCount = 5; // Keeping this conceptual until verification logic is built
     
     document.getElementById('total-pending').textContent = totalPending;
-    // document.getElementById('verified-count').textContent is set by the handleVerificationAction for now
 
     const progressBar = document.getElementById('uba-progress-bar');
     if (totalPending > 0) {
         // Calculate percentage based on mock-verified vs. real-pending
-        const percentage = (mockVerifiedCount / totalPending) * 100;
+        const percentage = (Math.min(mockVerifiedCount, totalPending) / totalPending) * 100;
         progressBar.style.width = `${percentage}%`;
     } else {
         progressBar.style.width = '100%';
@@ -165,7 +167,7 @@ function setupNavigation() {
 
 function setupVerificationChart() {
     const ctx = document.getElementById('conversion-chart');
-    if (window.Chart && ctx) { // Use Chart.js only if it's available
+    if (window.Chart && ctx) { 
          new Chart(ctx, {
             type: 'line',
             data: {
