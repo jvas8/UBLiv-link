@@ -4,97 +4,62 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UB Liv'Link Admin Dashboard</title>
-    <link rel="stylesheet" href="dashboard-styles.css"> 
+    <link rel="stylesheet" href="styles.css"> 
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    
-    <style>
-        /* Specific style for the Chart Container */
-        .chart-container {
-            background-color: var(--surface-color);
-            padding: 25px;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-subtle);
-            margin-bottom: 30px;
-        }
-
-        /* Verification Status Styling */
-        .pending-status { background-color: #fff3cd; color: #856404; font-weight: 700; }
-        .action-btn.view-docs-btn { color: var(--primary-color); border-color: var(--primary-color); }
-    </style>
 </head>
-<body class="admin-dashboard-override">
-    <div class="dashboard-wrapper">
+<body class="uba-dashboard">
+    <div class="uba-wrapper">
         
-        <aside class="sidebar">
-            <div class="logo-container">
+        <aside class="uba-sidebar">
+            <div class="uba-logo-container">
                 <img src="unnamed.png" alt="UB Liv'Link Logo">
-                <div class="app-name">UB Housing Admin</div>
+                <div class="uba-app-name">UB Housing Admin</div>
             </div>
-            <nav class="nav-menu">
-                <a href="#admin-overview" class="nav-item active">🏠 Overview</a>
-                <a href="#verification" class="nav-item" id="verification-nav">✅ Verification Queue</a>
-                <a href="#reports" class="nav-item">📈 Data & Reports</a>
-                <a href="#moderation" class="nav-item">⚠️ Review Moderation</a>
-                <a href="#system" class="nav-item">⚙️ System Mgmt</a>
+            <nav class="uba-nav-menu">
+                <a href="#uba-overview" class="uba-nav-item active">🏠 Overview</a>
+                <a href="#uba-verification-queue" class="uba-nav-item">✅ Verification Queue</a>
+                <a href="#uba-verification-report" class="uba-nav-item">📊 Verification Report</a>
+                <a href="#uba-review-report" class="uba-nav-item">⚠️ Review Report</a>
             </nav>
-            <button class="add-listing-btn" onclick="openAdminLog()">View Audit Log</button>
+            <button class="uba-audit-btn" onclick="openAdminLog()">View Audit Log</button>
         </aside>
 
-        <main class="content-area">
+        <main class="uba-content-area">
             
-            <div class="kpi-ticker">
-                <div class="ticker-item">New Review: <strong>4.2/5</strong> (University Ave)</div>
-                <div class="ticker-item">Listing Verified: <strong>LST345</strong> (Campus Heights)</div>
-                <div class="ticker-item">System Load: <strong>12%</strong></div>
-                <div class="ticker-item">Critical Flag: <strong>1 New</strong> (The Courtyard)</div>
-            </div>
-            
-            <section id="admin-overview" class="module active">
+            <section id="uba-overview" class="uba-module active">
                 <h2>Admin Dashboard Overview</h2>
                 
-<div class="map-controls" style="margin-bottom: 15px;">
-    <label for="map-data-layer" style="font-weight: 600; color: var(--text-color);">Map Data View:</label>
-    <select id="map-data-layer" style="padding: 8px; border-radius: 6px; border: 1px solid #ddd; margin-left: 10px;">
-        <option value="density">Property Density Heatmap</option>
-        <option value="rating">Average Rating by Zone</option>
-        <option value="complaints">Critical Complaint Hotspots</option>
-    </select>
-</div>
-<div id="interactive-map-area" class="map-placeholder">
-    Loading Map: Property Density Heatmap...
-</div>
-                
-                <div class="stats-grid">
-                    <div class="stat-card primary">
+                <div class="uba-stats-grid">
+                    <div class="uba-stat-card primary">
                         <h3>Listings Pending Verification</h3>
-                        <p class="stat-number">12</p>
+                        <p class="uba-stat-number">12</p>
                     </div>
-                    <div class="stat-card accent">
-                        <h3>Critical Reviews Flagged</h3>
-                        <p class="stat-number">7</p>
+                    <div class="uba-stat-card accent">
+                        <h3>Total Active Listings</h3>
+                        <p class="uba-stat-number">103</p>
                     </div>
-                    <div class="stat-card primary">
-                        <h3>User Account Reports</h3>
-                        <p class="stat-number">3</p>
-                    </div>
-                    <div class="stat-card accent">
+                    <div class="uba-stat-card primary">
                         <h3>Total Landlord Registrations</h3>
-                        <p class="stat-number">45</p>
+                        <p class="uba-stat-number">45</p>
+                    </div>
+                    <div class="uba-stat-card accent">
+                        <h3>Critical Reviews Flagged</h3>
+                        <p class="uba-stat-number">7</p>
                     </div>
                 </div>
             </section>
             
-            <section id="verification" class="module">
+            <section id="uba-verification-queue" class="uba-module">
                 <h2>✅ Listing Verification Queue</h2>
                 
                 <p style="font-weight: 600; color: #555;">Today's Goal: <span id="verified-count">5</span> / <span id="total-pending">12</span> Listings Verified</p>
-                <div class="progress-container">
-                    <div id="progress-bar" class="progress-bar" style="width: 42%;"></div>
+                <div class="uba-progress-container">
+                    <div id="uba-progress-bar" class="uba-progress-bar" style="width: 42%;"></div>
                 </div>
 
-                <div class="verification-table">
-                    <div class="table-header">
+                <div class="uba-verification-table">
+                    <div class="uba-table-header">
                         <div>Property & Landlord</div>
                         <div>Date Submitted</div>
                         <div>Status</div>
@@ -102,108 +67,78 @@
                         <div>Actions</div>
                     </div>
                     
-                    <div class="table-row" data-listing-id="LST101" id="row-LST101">
+                    <div class="uba-table-row" data-listing-id="LST101" id="row-LST101">
                         <div>The Courtyard, Unit 7 (John Smith)</div>
                         <div>2025-11-12</div>
-                        <div class="status pending-status">PENDING</div>
-                        <div><button class="action-btn view-docs-btn">View Docs</button></div>
+                        <div class="uba-status uba-status-pending">PENDING</div>
+                        <div><button class="uba-action-btn uba-view-docs-btn">View Docs</button></div>
                         <div>
-                            <button class="verify-btn">Verify</button>
-                            <button class="reject-btn">Reject</button>
+                            <button class="uba-verify-btn">Verify</button>
+                            <button class="uba-reject-btn">Reject</button>
                         </div>
                     </div>
                     
-                    <div class="table-row" data-listing-id="LST102" id="row-LST102">
+                    <div class="uba-table-row" data-listing-id="LST102" id="row-LST102">
                         <div>Campus Heights Apt B (Jane Doe Prop.)</div>
                         <div>2025-11-09</div>
-                        <div class="status pending-status">PENDING</div>
-                        <div><button class="action-btn view-docs-btn">View Docs</button></div>
+                        <div class="uba-status uba-status-pending">PENDING</div>
+                        <div><button class="uba-action-btn uba-view-docs-btn">View Docs</button></div>
                         <div>
-                            <button class="verify-btn">Verify</button>
-                            <button class="reject-btn">Reject</button>
+                            <button class="uba-verify-btn">Verify</button>
+                            <button class="uba-reject-btn">Reject</button>
                         </div>
                     </div>
                 </div>
             </section>
             
-            <section id="reports" class="module">
-                <h2>📈 Advanced Data & Reporting</h2>
+            <section id="uba-verification-report" class="uba-module">
+                <h2>📊 Verification Report: Q3 Performance</h2>
                 
-                <div class="chart-container">
-                    <h3 style="color:var(--primary-color); margin-top:0;">Listing Conversion Rate: Q3 2025</h3>
+                <div class="uba-chart-container">
+                    <h3 style="color:var(--primary-color); margin-top:0;">Verification Rate: Q3 2025</h3>
                     <canvas id="conversion-chart"></canvas>
                 </div>
                 
-                <div class="report-section">
+                <div class="uba-report-section">
                     
-                    <div class="report-card">
-                        <h4>Strategic Market Report</h4>
+                    <div class="uba-report-card">
+                        <h4>Verification Compliance Overview</h4>
                         <form>
                             <label for="report-type">Metric:</label>
                             <select id="report-type">
-                                <option>View-to-Contact Conversion</option>
-                                <option>Average Rent by Zone</option>
+                                <option>Average Time to Verify (Days)</option>
+                                <option>Rejection Rate by Document Type</option>
                             </select>
                             <label for="date-range">Date Range:</label>
                             <input type="text" id="date-range" value="Last 90 Days" placeholder="Last 90 Days">
-                            <button type="submit" class="primary-btn">Generate Analytics</button>
+                            <button type="submit" class="uba-primary-btn">Generate Analytics</button>
                         </form>
                     </div>
-
-                    <div class="report-card">
-                        <h4>Compliance & Audit Log</h4>
-                        <form>
-                            <label for="admin-user">Admin User:</label>
-                            <select id="admin-user">
-                                <option>All Staff</option>
-                                <option>Admin ID 1001 (Sarah)</option>
-                            </select>
-                            <label for="action-type">Action Type:</label>
-                            <select id="action-type">
-                                <option>Listing Verification</option>
-                                <option>User Ban/Suspend</option>
-                            </select>
-                            <button type="submit" class="primary-btn">Pull Audit Data</button>
-                        </form>
-                    </div>
-                    
                 </div>
             </section>
             
-            <section id="moderation" class="module">
-                <h2>⚠️ Critical Review Moderation</h2>
-                <div class="settings-card">
+            <section id="uba-review-report" class="uba-module">
+                <h2>⚠️ Review Moderation Report</h2>
+                <div class="uba-settings-card">
                     <h3 style="color:#dc3545;">AI-Flagged Critical Reviews (7 Pending)</h3>
                     <form>
                         <label for="ai-flag">Filter by Critical Flag:</label>
                         <select id="ai-flag">
                             <option>High Severity (Safety/Legal risk)</option>
                             <option>Maintenance Issue Frequency</option>
+                            <option>Moderator Action History</option>
                         </select>
-                        <button type="submit" class="primary-btn" style="background-color:#dc3545;">Search & Prioritize</button>
+                        <button type="submit" class="uba-primary-btn" style="background-color:#dc3545;">Search & Prioritize</button>
                     </form>
                 </div>
                 
-                <div class="review-list" style="margin-top: 20px;">
-                    <div class="review-card" style="border-left: 4px solid #dc3545;">
-                        <p class="review-meta" style="color:#dc3545; font-weight:700;">HIGH SEVERITY FLAG | Listing: The Courtyard</p>
-                        <p class="review-text">"Our heating went out last week and the landlord hasn't responded to the emergency request in 48 hours. This is unsafe."</p>
-                        <p class="review-author">— Student ID 543</p>
-                        <button class="action-btn reject-btn" style="background-color:#dc3545; color:white;">Investigate Property</button>
+                <div class="uba-review-list" style="margin-top: 20px;">
+                    <div class="uba-review-card" style="border-left: 4px solid #dc3545;">
+                        <p class="uba-review-meta" style="color:#dc3545; font-weight:700;">HIGH SEVERITY FLAG | Listing: The Courtyard</p>
+                        <p class="uba-review-text">"Our heating went out last week and the landlord hasn't responded to the emergency request in 48 hours. This is unsafe."</p>
+                        <p class="uba-review-author">— Student ID 543</p>
+                        <button class="uba-action-btn uba-reject-btn" style="background-color:#dc3545; color:white;">Investigate Property</button>
                     </div>
-                </div>
-            </section>
-
-            <section id="system" class="module">
-                <h2>⚙️ System Management</h2>
-                <p>Manage global system parameters and platform integration settings.</p>
-                <div class="settings-card">
-                    <h3>API Integration & Keys</h3>
-                    <form>
-                        <label for="api-key">External Service API Key:</label>
-                        <input type="text" id="api-key" value="ASDFG-HJKL-2345-QWERT" required>
-                        <button type="submit" class="primary-btn">Update API Key</button>
-                    </form>
                 </div>
             </section>
             
@@ -212,11 +147,11 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const navItems = document.querySelectorAll('.nav-item');
-            const modules = document.querySelectorAll('.module');
+            const navItems = document.querySelectorAll('.uba-nav-item');
+            const modules = document.querySelectorAll('.uba-module');
             const totalPendingElement = document.getElementById('total-pending');
             const verifiedCountElement = document.getElementById('verified-count');
-            const progressBar = document.getElementById('progress-bar');
+            const progressBar = document.getElementById('uba-progress-bar');
             
             let verifiedCount = 5;
             const totalPending = 12;
@@ -241,9 +176,9 @@
 
             function handleVerificationAction(e, action) {
                 e.preventDefault();
-                const listingRow = e.target.closest('.table-row');
+                const listingRow = e.target.closest('.uba-table-row');
                 const listingId = listingRow.dataset.listingId;
-                const statusElement = listingRow.querySelector('.status');
+                const statusElement = listingRow.querySelector('.uba-status');
                 
                 if (statusElement.textContent.trim() !== 'PENDING') {
                     alert(`Listing ${listingId} is already ${statusElement.textContent.trim()}.`);
@@ -255,7 +190,7 @@
                 setTimeout(() => {
                     if (action === 'verify') {
                         statusElement.textContent = 'VERIFIED';
-                        statusElement.className = 'status';
+                        statusElement.className = 'uba-status';
                         statusElement.style.backgroundColor = '#d4edda';
                         statusElement.style.color = '#155724';
                         
@@ -265,45 +200,16 @@
 
                     } else if (action === 'reject') {
                         statusElement.textContent = 'REJECTED';
-                        statusElement.className = 'status';
+                        statusElement.className = 'uba-status';
                         statusElement.style.backgroundColor = '#f8d7da';
                         statusElement.style.color = '#721c24';
                         alert(`Listing ${listingId} rejected.`);
                     }
                     
                     listingRow.style.opacity = 1;
-                    listingRow.querySelectorAll('.verify-btn, .reject-btn').forEach(btn => btn.disabled = true);
+                    listingRow.querySelectorAll('.uba-verify-btn, .uba-reject-btn').forEach(btn => btn.disabled = true);
                 }, 800);
             }
-
-            // --- FANCY JS FEATURE 3: Interactive Map Simulation ---
-    const mapArea = document.getElementById('interactive-map-area');
-    const mapLayerSelect = document.getElementById('map-data-layer');
-    const mapViews = {
-        density: "Property Density Heatmap (Most Listings)",
-        rating: "Average Rating by Zone (Rating > 4.0)",
-        complaints: "Critical Complaint Hotspots (High Severity)",
-    };
-
-    mapLayerSelect.addEventListener('change', (e) => {
-        const selectedKey = e.target.value;
-        mapArea.classList.add('loading'); // Use CSS transition for visual effect
-        mapArea.textContent = `Rendering Map: ${mapViews[selectedKey]}...`;
-
-        // Simulate data fetching and rendering delay
-        setTimeout(() => {
-            mapArea.classList.remove('loading');
-            mapArea.innerHTML = `
-                <p style="font-size: 1.1em;">
-                     **${mapViews[selectedKey]}** is now displayed. 
-                    (Data filtered by ${selectedKey.toUpperCase()})
-                </p>
-                <p style="font-size: 0.8em; color: #6c757d;">
-                    (In a real app, this would integrate with Google Maps or Leaflet.)
-                </p>
-            `;
-        }, 1000); // 1 second delay for realism
-    });
 
             // Event Listeners for Dynamic Actions
             navItems.forEach(item => {
@@ -314,15 +220,15 @@
                 });
             });
             
-            document.querySelectorAll('.verify-btn').forEach(btn => {
+            document.querySelectorAll('.uba-verify-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => handleVerificationAction(e, 'verify'));
             });
 
-            document.querySelectorAll('.reject-btn').forEach(btn => {
+            document.querySelectorAll('.uba-reject-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => handleVerificationAction(e, 'reject'));
             });
 
-            // --- FANCY JS FEATURE 2: Chart.js Data Visualization (Now uses Purple) ---
+            // Chart.js Data Visualization
             const ctx = document.getElementById('conversion-chart');
             if (ctx) {
                  new Chart(ctx, {
@@ -332,7 +238,7 @@
                         datasets: [{
                             label: 'Conversion Rate % (Views to Contact)',
                             data: [3.5, 3.8, 4.2, 4.0],
-                            // Using RGB for #5D2D91
+                            // Using RGB for #5D2D91 (primary-color)
                             borderColor: 'rgb(93, 45, 145)', 
                             backgroundColor: 'rgba(93, 45, 145, 0.1)',
                             fill: true,
@@ -352,7 +258,7 @@
                                 beginAtZero: false,
                                 title: {
                                     display: true,
-                                    text: 'Conversion Rate (%)'
+                                    text: 'Verification Rate (%)'
                                 }
                             }
                         }
@@ -365,13 +271,16 @@
             window.openAdminLog = function() {
                 alert("Opening the System Audit Log (conceptual)...");
             };
-            document.querySelectorAll('.report-card form').forEach(form => {
+            document.querySelectorAll('.uba-report-card form, .uba-settings-card form').forEach(form => {
                 form.addEventListener('submit', (e) => {
                     e.preventDefault();
                     alert(`Report generated! Parameters: ${new FormData(form).get('report-type') || new FormData(form).get('ai-flag')}`);
                 });
             });
+
+            // Initial switch to overview
+            switchModule('uba-overview', document.querySelector('[href="#uba-overview"]'));
         });
     </script>
 </body>
-</html> map placeholder
+</html>
