@@ -113,7 +113,6 @@ function renderOverviewData(data) {
     document.getElementById('pending-verification-count').textContent = data.pendingVerificationCount;
     document.getElementById('active-listings-count').textContent = data.totalActiveListings;
     document.getElementById('landlord-count').textContent = data.totalLandlords;
-    document.getElementById('flagged-reviews-count').textContent = data.criticalReviewsFlagged;
     
     // Verification Queue Progress Bar update 
     const totalPending = parseInt(data.pendingVerificationCount);
