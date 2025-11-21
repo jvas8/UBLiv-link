@@ -85,7 +85,7 @@ async function fetchAndDisplayListings() {
     loadingSpinner.style.display = "flex";
     listingContainer.innerHTML = ""; // Clear existing listings
 
-    // Query includes image_url and joins to get the landlord's email
+    // CRITICAL FIX: Using 'landlord_id' (the FK column name) for the join to 'users' table
     const { data: listings, error } = await supabase
         .from("listings")
         .select(`
@@ -94,7 +94,7 @@ async function fetchAndDisplayListings() {
             location,
             price,
             image_url, 
-            users(email), // Assumed join to get the landlord's email (Landlord is the user_id foreign key)
+            landlord_id(email), // FIX: Use the FK column name for the join path
             property_details(property_type),
             reviews(rating)
         `) 
@@ -119,8 +119,9 @@ async function fetchAndDisplayListings() {
         const avgRating = calculateAverageRating(listing.reviews);
         // Get property type (accessing the joined data)
         const propertyType = listing.property_details.length > 0 ? listing.property_details[0].property_type : 'N/A';
-        // Get landlord email (accessing the joined data)
-        const landlordEmail = listing.users ? listing.users.email : 'contact@landlord.com'; 
+        
+        // CRITICAL FIX: Access the email using the new join property name 'landlord_id'
+        const landlordEmail = listing.landlord_id ? listing.landlord_id.email : 'contact@landlord.com'; 
         
         listingContainer.innerHTML += createListingCard(listing, propertyType, avgRating, landlordEmail);
     });
