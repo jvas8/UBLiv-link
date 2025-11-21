@@ -1171,6 +1171,215 @@ input:checked + .slider:before {
     font-weight: 500;
 }
 
+/* ... (Keep existing styles) ... */
+
+/* ===== REVIEW MODAL STYLES & CONTACT MODAL STYLES (Consolidated/New) ===== */
+
+/* Use the base .modal-overlay style */
+
+.form-container.advanced {
+    background-color: var(--white);
+    padding: 30px;
+    border-radius: 12px; /* Slightly larger border-radius */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    max-width: 500px; /* Slightly wider */
+    width: 90%;
+    overflow: hidden; 
+}
+
+.form-container.advanced h2 {
+    color: var(--primary-color);
+    text-align: center;
+    margin-bottom: 5px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.listing-ref {
+    text-align: center;
+    color: #888;
+    margin-bottom: 25px;
+    font-size: 0.9em;
+}
+
+/* --- Progress Bar Styling --- */
+.progress-bar {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 30px;
+    position: relative;
+}
+
+.progress-bar::before {
+    content: '';
+    position: absolute;
+    height: 3px;
+    width: 100%;
+    background-color: #eee;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1;
+}
+
+.step {
+    width: 45%;
+    text-align: center;
+    padding: 10px 0;
+    border-radius: 5px;
+    font-weight: bold;
+    color: #ccc;
+    position: relative;
+    z-index: 2;
+    background-color: var(--white);
+    border: 1px solid #eee;
+    transition: all 0.3s;
+}
+
+.step.active {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 5px rgba(125, 45, 145, 0.1);
+}
+/* -------------------------- */
+
+/* --- Form Step Display (Requires JavaScript to switch the 'active' class) --- */
+.form-step {
+    display: none;
+}
+
+.form-step.active {
+    display: block;
+}
+/* -------------------------- */
+
+.form-container.advanced fieldset { border: none; padding: 0; margin-bottom: 20px; }
+.form-container.advanced legend { font-size: 1.2em; margin-bottom: 15px; color: var(--text-color); }
+.form-container.advanced .form-group { margin-bottom: 15px; }
+
+.form-container.advanced input[type="date"],
+.form-container.advanced textarea {
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+    width: 100%; 
+}
+
+.form-container.advanced input:focus, 
+.form-container.advanced textarea:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(255, 199, 44, 0.3); 
+    outline: none;
+}
+
+
+/* --- Radio Card Styling --- */
+.radio-card-group {
+    display: flex;
+    gap: 15px;
+}
+
+.radio-card-group input[type="radio"] {
+    display: none; 
+}
+
+.radio-card {
+    flex-basis: 50%;
+    border: 2px solid #eee;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background-color: var(--white);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.radio-card:hover {
+    border-color: #ccc;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.radio-card-group input[type="radio"]:checked + .radio-card {
+    border-color: var(--primary-color);
+    background-color: rgba(125, 45, 145, 0.05); 
+    box-shadow: 0 0 0 3px rgba(125, 45, 145, 0.2);
+}
+
+.card-title {
+    display: block;
+    font-weight: bold;
+    color: var(--primary-color);
+    margin: 5px 0;
+}
+
+.card-desc {
+    font-size: 0.8em;
+    color: #666;
+}
+
+.radio-card i {
+    font-size: 2em;
+    color: var(--accent-color); 
+}
+/* -------------------------- */
+
+/* --- Contact Modal Button Styling (from user's block) --- */
+.primary-btn {
+    background-color: var(--accent-color);
+    color: var(--primary-color);
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    transition: background-color 0.3s, box-shadow 0.3s;
+    width: 100%;
+    margin-top: 15px;
+}
+
+.primary-btn:hover {
+    background-color: #ffb800; 
+    box-shadow: 0 4px 10px rgba(255, 199, 44, 0.4);
+}
+
+.button-group {
+    display: flex;
+    gap: 10px;
+}
+
+.button-group .primary-btn {
+    flex: 1;
+    width: auto; 
+    background-color: var(--primary-color);
+    color: var(--white);
+}
+
+.button-group .primary-btn:hover {
+    background-color: #5d2070;
+    box-shadow: 0 4px 10px rgba(125, 45, 145, 0.4);
+}
+
+.secondary-btn {
+    flex: 1;
+    background-color: #eee;
+    color: var(--text-color);
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    transition: background-color 0.3s;
+    margin-top: 15px;
+}
+
+.secondary-btn:hover {
+    background-color: #ddd;
+}
+/* ... (Rest of existing styles) ... */
+
 /* ===== LANDLORD DASHBOARD STYLES (Integrated from dash.css) ===== */
 
 /* Scoping body styles to prevent conflict with main site body */
