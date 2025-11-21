@@ -568,7 +568,9 @@ async function handleReviewSubmit(e) {
 
         alert("Review submitted successfully! Your feedback is appreciated.");
         reviewModal.style.display = "none";
-        fetchAndDisplayListings();
+        
+        // Refresh the specific listing's reviews instead of reloading everything
+        await refreshListingReviews(listingID);
 
     } catch (error) {
         console.error("Unexpected error during review submission:", error);
@@ -577,4 +579,54 @@ async function handleReviewSubmit(e) {
         submitBtn.textContent = "Submit Review";
         submitBtn.disabled = false;
     }
+}
+
+/**
+ * Refresh reviews for a specific listing and update the display
+ */
+async function refreshListingReviews(listingId) {
+    // Fetch updated reviews for this specific listing
+    const { data: updatedReviews, error } = await supabase
+        .from("reviews")
+        .select("rating")
+        .eq("listing_id", listingId);
+
+    if (error) {
+        console.error("Error fetching updated reviews:", error);
+        return;
+    }
+
+    // Update the reviews array for this listing in our global allListings
+    const listingIndex = allListings.findIndex(listing => listing.listing_id === listingId);
+    if (listingIndex !== -1) {
+        allListings[listingIndex].reviews = updatedReviews || [];
+        
+        // Find the listing card in the DOM and update its rating
+        updateListingCardRating(listingId, updatedReviews);
+    }
+}
+
+/**
+ * Update the rating display for a specific listing card
+ */
+function updateListingCardRating(listingId, reviews) {
+    const avgRating = calculateAverageRating(reviews);
+    const starRatingHTML = generateStarRating(avgRating);
+    
+    // Find all listing cards
+    const listingCards = document.querySelectorAll('.listing-card');
+    
+    listingCards.forEach(card => {
+        const reviewButton = card.querySelector('.btn-review');
+        if (reviewButton && reviewButton.getAttribute('data-listing-id') === listingId) {
+            // Update the rating info
+            const ratingInfo = card.querySelector('.rating-info');
+            if (ratingInfo) {
+                ratingInfo.innerHTML = `
+                    ${starRatingHTML}
+                    <span class="avg-text">(${avgRating > 0 ? avgRating : 'No Reviews'})</span>
+                `;
+            }
+        }
+    });
 }
