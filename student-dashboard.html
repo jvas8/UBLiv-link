@@ -8,14 +8,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-</head>
+  </head>
 <body>
 
   <nav class="main-nav">
     <div class="logo"><span>UB</span>Liv' Link</div>
     <div class="nav-actions">
-      <span id="welcome-message">Welcome, <strong>Loading...</strong> (Student)</span> <!-- ADDED ID -->
+      <span id="welcome-message">Welcome, <strong>Loading...</strong> (Student)</span>
       <button class="btn-logout" id="logout-btn">Logout</button>
     </div>
   </nav>
@@ -30,8 +29,7 @@
       <label for="location-filter">Location</label>
       <select id="location-filter">
         <option value="">All Locations</option>
-        <!-- Locations will be populated dynamically -->
-      </select>
+        </select>
     </div>
 
     <div class="filter-group">
@@ -48,8 +46,7 @@
       <label for="type-filter">Property Type</label>
       <select id="type-filter">
         <option value="">All Types</option>
-        <!-- Property types will be populated dynamically -->
-      </select>
+        </select>
     </div>
 
     <div class="filter-group">
@@ -57,7 +54,7 @@
       <input type="text" id="search-box" placeholder="Search listings...">
     </div>
 
-    <button class="btn-filter" id="apply-filters-btn">Apply Filters</button> <!-- CHANGED ID -->
+    <button class="btn-filter" id="apply-filters-btn">Apply Filters</button>
   </section>
 
   <section class="listing-section">
@@ -67,490 +64,59 @@
       <p>Loading listings...</p>
     </div>
     <div class="listings-grid" id="listing-container">
-      <!-- Listings populate here -->
-    </div>
+      </div>
   </section>
 
   <footer class="main-footer">
     <p>© 2025 UBLiv' Link — Student Housing Portal</p>
   </footer>
 
-<script>
-  // Supabase configuration
-  const SUPABASE_URL = 'https://dquslrxlpmrersnjybym.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxdXNscnhscG1yZXJzbmp5YnltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxNDg4NTYsImV4cCI6MjA3ODcyNDg1Nn0.ICkT2aVP_Ngr3Z24V2b9WLUxvcM-e6B84WkATqt94a8';
-  
-  // Initialize Supabase client
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  
-  let currentUser = null;
-  let allListings = [];
-
-  // DOM Elements
-  const container = document.getElementById("listing-container");
-  const logoutBtn = document.getElementById("logout-btn");
-  const welcomeMessage = document.getElementById("welcome-message");
-  const applyFiltersBtn = document.getElementById("apply-filters-btn");
-  const loadingSpinner = document.getElementById("loading-spinner");
-
-  // Initialize the dashboard
-  document.addEventListener('DOMContentLoaded', function() {
-    initializeDashboard();
-  });
-
-async function debugDatabase() {
-    console.log('=== DATABASE DEBUG INFO ===');
-    
-    // Test 1: Check if we can access the listings table
-    const { data: testData, error: testError } = await supabase
-      .from('listings')
-      .select('*, property_details(property_type)')
-      .limit(1);
-    
-    console.log('Test query result:', testData, testError);
-    
-    // Test 2: Check table structure
-    const { data: allListings, error: allError } = await supabase
-      .from('listings')
-      .select('*, property_details(property_type)');
-    
-    console.log('All listings in database:', allListings);
-    console.log('Total listings count:', allListings ? allListings.length : 0);
-    
-    // Test 3: Check specific columns
-    if (allListings && allListings.length > 0) {
-      console.log('First listing details:', allListings[0]);
-      console.log('Availability:', allListings[0].availability);
-      console.log('Verification status:', allListings[0].verification_status);
-      console.log('Property Type:', allListings[0].property_details?.[0]?.property_type);
-    }
-    
-    console.log('=== END DEBUG INFO ===');
-  }
-
-  async function initializeDashboard() {
-    try {
-      // Get current session
-      const { data: { session }, error } = await supabase.auth.getSession();
-      
-      if (error || !session) {
-        window.location.href = 'auth.html';
-        return;
-      }
-
-      console.log('Session:', session); 
-      
-      // Get user data from USERS table
-      await loadUserData(session.user);
-      
-      // Load listings
-      await loadListings();
-      
-      // Populate filter options
-      populateFilterOptions();
-      
-    } catch (error) {
-      console.error('Error initializing dashboard:', error);
-      showError('Failed to load dashboard data. Please refresh the page.');
-    }
-  }
-
-  async function loadUserData(user) {
-    try {
-        console.log('Loading user data for:', user.email);
+<div class="modal-overlay" id="review-modal" style="display: none;">
+    <div class="form-container">
+        <h1>Leave a Review 📝</h1>
+        <p class="subtitle" id="modal-subtitle">Share your experience.</p>
         
-        // Get user from USERS table using email - NOTE: Your schema uses lowercase column names
-        const { data: userData, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('email', user.email)
-            .single();
+        <form id="review-form">
+            <input type="hidden" name="listingID" id="review-listing-id">
+            <input type="hidden" name="userID" id="review-user-id">
 
-        console.log('User data response:', userData, error);
+            <fieldset class="rating-fieldset">
+                <legend>Overall Rating</legend>
+                <div class="rating-widget">
+                    <input type="radio" id="star5" name="rating" value="5" required><label for="star5" title="Amazing"></label>
+                    <input type="radio" id="star4" name="rating" value="4"><label for="star4" title="Good"></label>
+                    <input type="radio" id="star3" name="rating" value="3"><label for="star3" title="Average"></label>
+                    <input type="radio" id="star2" name="rating" value="2"><label for="star2" title="Poor"></label>
+                    <input type="radio" id="star1" name="rating" value="1"><label for="star1" title="Terrible"></label>
+                </div>
+                <p class="rating-feedback" id="ratingFeedback">Select a star to rate your experience.</p>
+            </fieldset>
 
-        if (error || !userData) {
-            console.error('Error loading user:', error);
-            // Use basic user info as fallback
-            currentUser = {
-                user_id: user.id,
-                name: user.email.split('@')[0],
-                email: user.email,
-                role: 'student'
-            };
-        } else {
-            currentUser = userData;
-        }
-        
-        console.log('Current user:', currentUser);
-        
-        // Update welcome message
-        if (welcomeMessage) {
-            welcomeMessage.innerHTML = `Welcome, <strong>${currentUser.name}</strong> (${currentUser.role})`;
-        }
-        
-    } catch (error) {
-        console.error('Error loading user data:', error);
-        // Even if user data fails, try to continue with basic info
-        currentUser = {
-            user_id: user.id,
-            name: user.email.split('@')[0],
-            email: user.email,
-            role: 'student'
-        };
-        if (welcomeMessage) {
-            welcomeMessage.innerHTML = `Welcome, <strong>${currentUser.name}</strong> (${currentUser.role})`;
-        }
-    }
-  }
-async function loadListings() {
-  showLoading(true);
-  
-  try {
-    console.log('Loading ONLY verified and available listings...');
-    
-    // 1. QUERY: Correctly join listings and property_details
-    const { data: listings, error } = await supabase
-      .from('listings')
-      .select('*, property_details(property_type)') 
-      .eq('verification_status', 'verified') 
-      .eq('availability', true)             
-      .order('listing_id', { ascending: false });
+            <fieldset>
+                <legend>Your Feedback</legend>
+                <div class="form-group">
+                    <label for="reviewText">Write your detailed review</label>
+                    <textarea id="reviewText" name="reviewText" rows="5" placeholder="What did you like or dislike about the property/landlord?"></textarea>
+                </div>
+            </fieldset>
 
-    if (error) {
-      console.error('Database error:', error);
-      throw error;
-    }
-    // ⭐ CRITICAL LINE 1: CHECK THE RAW DATA RETURNED FROM SUPABASE
-    console.log('RAW SUPABASE DATA:', listings);
+            <fieldset class="toggle-fieldset">
+                <legend>Publishing Options</legend>
+                <div class="form-group toggle-group">
+                    <label for="anonymous">Post Anonymously</label>
+                    <input type="checkbox" id="anonymous" name="anonymous" class="switch">
+                </div>
+                <small class="toggle-description" id="switchDescription">Your review will be posted under your profile name.</small>
+            </fieldset>
 
-    console.log('All listings from database:', listings);
-
-    // 2. MAPPING: Correctly extract the joined data
-// 2. MAPPING: Correctly extract the joined data
-    allListings = listings.map(listing => {
-      
-      // ✅ FINAL FIX: Access the nested property_type object directly.
-      const propertyType = listing.property_details?.property_type || 'Unknown Type';
-      
-      console.log(`Listing ${listing.name} Type: ${propertyType}`); // Check this line again!
-
-      return {
-        id: listing.listing_id,
-        title: listing.name,
-        description: listing.feedback || 'No description available',
-        price: `$${listing.price}`,
-        location: listing.location,
-        type: propertyType, 
-        image: getPropertyImage(propertyType), 
-        landlordEmail: listing.email,
-        isAvailable: listing.availability,
-        leasing: listing.leasing,
-        verificationStatus: listing.verification_status,
-        isVerified: listing.verification_status === 'verified'
-      };
-    });
-
-    console.log('Processed listings for display:', allListings);
-    displayListings(allListings);
-    
-  } catch (error) {
-    console.error('Error loading listings:', error);
-    showError('Failed to load listings. Please try again.');
-    loadSampleData();
-  } finally {
-    showLoading(false);
-  }
-}
-// Helper function to get appropriate image (UPDATED TO USE TYPE)
-  function getPropertyImage(type) {
-    const lowerType = type.toLowerCase();
-    if (lowerType.includes('studio')) return 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=600';
-    if (lowerType.includes('room')) return 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600';
-    if (lowerType.includes('1-bedroom')) return 'https://images.unsplash.com/photo-1554995207-c18c203602cb?w=600';
-    if (lowerType.includes('house') || lowerType.includes('3+')) return 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600';
-    return 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600'; // Default house image
-  }
-  
-  function showLoading(show) {
-    if (loadingSpinner) {
-      loadingSpinner.style.display = show ? 'block' : 'none';
-    }
-    if (container) {
-      container.style.display = show ? 'none' : 'grid';
-    }
-  }
-
-  function loadSampleData() {
-    allListings = [
-      {
-        id: 1,
-        image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600",
-        title: "2-Bedroom Apartment near UB Campus",
-        price: "$650",
-        location: "Belmopan",
-        type: "2-Bedroom Apartment",
-        description: "Spacious apartment with Wi-Fi, A/C, and laundry access. Perfect for students."
-      },
-      {
-        id: 2,
-        image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=600",
-        title: "Studio Apartment – Central Belmopan",
-        price: "$500",
-        location: "Belmopan",
-        type: "Studio - Self-contained unit",
-        description: "Affordable studio ideal for single students, near main bus stop."
-      }
-    ];
-    
-    displayListings(allListings);
-  }
-
-  function populateFilterOptions() {
-    const locationFilter = document.getElementById('location-filter');
-    const typeFilter = document.getElementById('type-filter');
-    
-    if (!locationFilter || !typeFilter) return;
-    
-    // Get unique locations from listings
-    const locations = [...new Set(allListings.map(listing => listing.location))].filter(l => l); // Filter out null/empty
-    
-    // Use the standardized list for types
-    const types = [
-        'Private Room',
-        'Studio - Self-contained unit',
-        '1-Bedroom Apartment',
-        '2-Bedroom Apartment',
-        '3+ Bedroom House - For groups of students'
-    ];
-    
-    // Clear existing options (except first one)
-    while (locationFilter.children.length > 1) {
-      locationFilter.removeChild(locationFilter.lastChild);
-    }
-    while (typeFilter.children.length > 1) {
-      typeFilter.removeChild(typeFilter.lastChild);
-    }
-    
-    // Populate location filter
-    locations.forEach(location => {
-      const option = document.createElement('option');
-      option.value = location;
-      option.textContent = location;
-      locationFilter.appendChild(option);
-    });
-    
-    // Populate type filter (using standardized list)
-    types.forEach(type => {
-      const option = document.createElement('option');
-      option.value = type;
-      option.textContent = type;
-      typeFilter.appendChild(option);
-    });
-  }
-
- function displayListings(data) {
-  if (!container) return;
-  
-  container.innerHTML = "";
-  
-  if (data.length === 0) {
-    container.innerHTML = `
-      <div class="no-listings" style="grid-column: 1/-1; text-align: center; padding: 3rem;">
-        <h3 style="color: #5A5A5A; margin-bottom: 1rem;">No listings found</h3>
-        <p style="color: #5A5A5A;">Try adjusting your filters or check back later for new listings.</p>
-        <button class="btn-primary" onclick="loadListings()" style="margin-top: 1rem;">Reload Listings</button>
-      </div>
-    `;
-    return;
-  }
-  
-  data.forEach(listing => {
-    let fullDescription = listing.description;
-    if (listing.leasing) {
-      fullDescription = `${fullDescription} Leasing: ${listing.leasing}`;
-    }
-    
-    // Add verification badge
-    const verificationBadge = listing.isVerified 
-      ? '<span class="verified-badge">✅ Verified</span>'
-      : '<span class="pending-badge">⏳ Pending Verification</span>';
-    
-    container.innerHTML += `
-      <div class="listing-card" data-listing-id="${listing.id}">
-        <img src="${listing.image}" alt="${listing.title}" onerror="this.src='https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600'">
-        <div class="listing-info">
-          <div class="listing-header">
-            <h3>${listing.title}</h3>
-            <div style="display: flex; gap: 0.5rem; align-items: center;">
-              <span class="type-badge">${listing.type}</span>
-              ${verificationBadge}
+            <div class="button-group">
+                <button type="submit" class="submit-btn" id="submit-review-btn">Submit Review</button>
+                <button type="button" class="cancel-btn" id="cancel-review-btn">Cancel</button>
             </div>
-          </div>
-          <div class="listing-price">${listing.price} <span class="price-period">/ month</span></div>
-          <div class="listing-location">${listing.location}</div>
-          <p class="listing-desc">${fullDescription}</p>
-        </div>
-        <div class="listing-actions">
-          <button class="btn-contact" data-listing-id="${listing.id}" data-landlord-email="${listing.landlordEmail}">Contact</button>
-          <button class="btn-review" data-listing-id="${listing.id}">Review</button>
-        </div>
-      </div>
-    `;
-  });
-}
-  function filterListings() {
-    const loc = document.getElementById("location-filter").value;
-    const price = document.getElementById("price-filter").value;
-    const type = document.getElementById("type-filter").value; // This is now the standardized type
-    const search = document.getElementById("search-box").value.toLowerCase();
-
-    let filtered = allListings.filter(listing => {
-      const priceNum = parseInt(listing.price.replace(/\D/g,''));
-      const locationMatch = loc === "" || listing.location === loc;
-      const typeMatch = type === "" || listing.type === type;
-      const priceMatch = price === "" || 
-        (price === "Under $500" && priceNum < 500) ||
-        (price === "$500 - $800" && priceNum >= 500 && priceNum <= 800) ||
-        (price === "$800+" && priceNum > 800);
-      const searchMatch = listing.title.toLowerCase().includes(search) || 
-                         listing.description.toLowerCase().includes(search) ||
-                         listing.location.toLowerCase().includes(search);
-      
-      return locationMatch && typeMatch && priceMatch && searchMatch;
-    });
-    
-    displayListings(filtered);
-  }
-
-  function showError(message) {
-    if (!container) return;
-    
-    container.innerHTML = `
-      <div class="error-message" style="grid-column: 1/-1; text-align: center; padding: 3rem;">
-        <h3 style="color: #e74c3c; margin-bottom: 1rem;">Error</h3>
-        <p style="color: #5A5A5A;">${message}</p>
-        <button class="btn-primary" onclick="loadListings()" style="margin-top: 1rem;">Try Again</button>
-      </div>
-    `;
-  }
-
-  // Event Listeners
-  if (applyFiltersBtn) {
-    applyFiltersBtn.addEventListener('click', filterListings);
-  }
-
-  // Enter key in search box
-  const searchBox = document.getElementById('search-box');
-  if (searchBox) {
-    searchBox.addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') {
-        filterListings();
-      }
-    });
-  }
-
-  // Logout functionality
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', async function() {
-      const confirmLogout = confirm('Are you sure you want to logout?');
-      
-      if (confirmLogout) {
-        const { error } = await supabase.auth.signOut();
-        
-        if (error) {
-          console.error('Error signing out:', error);
-        }
-        
-        window.location.href = 'auth.html';
-      }
-    });
-  }
-  
-
-  // Contact and Review buttons
-  document.addEventListener('click', async function(e) {
-    if (e.target.classList.contains('btn-contact')) {
-      const listingId = e.target.getAttribute('data-listing-id');
-      const landlordEmail = e.target.getAttribute('data-landlord-email');
-      const listing = allListings.find(l => l.id == listingId);
-      
-      if (listing) {
-        alert(`Contact landlord for: ${listing.title}\n\nEmail: ${landlordEmail}\n\nYou can email the landlord directly at this address.`);
-      }
-    }
-    
-    if (e.target.classList.contains('btn-review')) {
-      const listingId = e.target.getAttribute('data-listing-id');
-      const listing = allListings.find(l => l.id == listingId);
-      
-      if (listing && currentUser) {
-        const { data: existingReview, error } = await supabase
-          .from('review')
-          .select('*')
-          .eq('UserID', currentUser.user_id)
-          .eq('ListingID', listingId)
-          .single();
-
-        if (existingReview) {
-          alert(`You've already reviewed this property!\n\nYour rating: ${existingReview.Rating}/5\nYour comment: ${existingReview.Description}`);
-        } else {
-          const rating = prompt(`Rate ${listing.title} from 1-5 stars:`);
-          if (rating && rating >= 1 && rating <= 5) {
-            const comment = prompt('Add a comment (optional):');
-            
-            const { error: reviewError } = await supabase
-              .from('REVIEW')
-              .insert({
-                UserID: currentUser.user_id,
-                ListingID: listingId,
-                Rating: rating,
-                Description: comment || ''
-              });
-
-            if (reviewError) {
-              alert('Error submitting review. Please try again.');
-            } else {
-              alert('Thank you for your review!');
-            }
-          }
-        }
-      }
-    }
-  });
-
-  // Auto-refresh listings every 5 minutes
-  setInterval(() => {
-    loadListings();
-  }, 300000);
-</script>
-<style>
-  .loading-spinner {
-    text-align: center;
-    padding: 3rem;
-  }
-  
-  .spinner {
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #7D2D91;
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    animation: spin 2s linear infinite;
-    margin: 0 auto 1rem;
-  }
-  
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-  
-  .error-message {
-    background: #fff5f5;
-    border: 1px solid #fed7d7;
-    border-radius: 12px;
-    padding: 2rem;
-  }
-</style>
+        </form>
+    </div>
+</div>
+<script type="module" src="auth.js"></script> 
 
 </body>
 </html>
