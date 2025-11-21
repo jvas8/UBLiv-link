@@ -93,26 +93,12 @@ async function fetchOverviewData() {
         if (landlordError) throw landlordError;
         results.totalLandlords = landlordCount || 0;
 
-        // 4. Critical Reviews Flagged (Requires 'is_flagged' column in 'reviews' table)
-        let { count: flaggedCount, error: flaggedError } = await supabase
-            .from('reviews') 
-            .select('*', { count: 'exact', head: true })
-            .eq('is_flagged', true); 
-
-        if (flaggedError) {
-            console.warn("Could not fetch flagged reviews. Ensure the 'is_flagged' column exists in the 'reviews' table. Defaulting to 0.", flaggedError.message);
-            results.criticalReviewsFlagged = 0; 
-        } else {
-            results.criticalReviewsFlagged = flaggedCount || 0;
-        }
-
     } catch (error) {
         console.error("Fatal Error fetching overview data:", error.message);
         return {
             pendingVerificationCount: 'N/A',
             totalActiveListings: 'N/A',
             totalLandlords: 'N/A',
-            criticalReviewsFlagged: 'N/A'
         };
     }
     
