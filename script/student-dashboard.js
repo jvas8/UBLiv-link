@@ -9,6 +9,7 @@ const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 let currentUserID = null; 
+let allListings = [];
 
 document.addEventListener("DOMContentLoaded", async function() {
     // 1. Check auth and fetch user profile to get 'user_id'
@@ -80,19 +81,6 @@ async function fetchAndDisplayListings() {
 
     console.log("Starting to fetch listings...");
 
-    // First, let's test if we can fetch photos at all
-    console.log("Testing photos table access...");
-    const { data: testPhotos, error: testError } = await supabase
-        .from("photos")
-        .select("*")
-        .limit(5);
-
-    if (testError) {
-        console.error("Cannot access photos table:", testError);
-    } else {
-        console.log("Test photos query result:", testPhotos);
-    }
-
     // Fetch listings
     const { data: listings, error } = await supabase
         .from("listings")
@@ -123,56 +111,181 @@ async function fetchAndDisplayListings() {
         return;
     }
 
-    // Get all listing IDs
-    const listingIds = listings.map(l => l.listing_id);
-    console.log("Listing IDs to fetch photos for:", listingIds);
+    // Store listings globally for filtering
+    allListings = listings;
 
-    // Fetch photos for all listings - try different approaches
-    let allPhotos = [];
-    
-    // Approach 1: Try to fetch all photos without filtering first
-    const { data: allPhotosData, error: allPhotosError } = await supabase
+    // Populate filters with the listings data
+    populateFilters(listings);
+
+    // Fetch photos for all listings
+    const listingIds = listings.map(l => l.listing_id);
+    const { data: allPhotos, error: photosError } = await supabase
         .from("photos")
         .select("listing_id, photo_url")
-        .limit(100); // Get first 100 photos to see what's there
+        .in("listing_id", listingIds);
 
-    if (allPhotosError) {
-        console.error("Error fetching all photos:", allPhotosError);
-    } else {
-        console.log("All photos in database:", allPhotosData);
-        allPhotos = allPhotosData || [];
-    }
-
-    // If that didn't work, try with the specific listing IDs
-    if (allPhotos.length === 0 && listingIds.length > 0) {
-        const { data: filteredPhotos, error: filteredError } = await supabase
-            .from("photos")
-            .select("listing_id, photo_url")
-            .in("listing_id", listingIds);
-
-        if (filteredError) {
-            console.error("Error fetching filtered photos:", filteredError);
-        } else {
-            console.log("Filtered photos:", filteredPhotos);
-            allPhotos = filteredPhotos || [];
-        }
+    if (photosError) {
+        console.error("Error fetching photos:", photosError);
     }
 
     // Group photos by listing_id
     const photosByListing = {};
-    allPhotos.forEach(photo => {
-        if (!photosByListing[photo.listing_id]) {
-            photosByListing[photo.listing_id] = [];
-        }
-        photosByListing[photo.listing_id].push(photo);
-    });
+    if (allPhotos) {
+        allPhotos.forEach(photo => {
+            if (!photosByListing[photo.listing_id]) {
+                photosByListing[photo.listing_id] = [];
+            }
+            photosByListing[photo.listing_id].push(photo);
+        });
+    }
 
     console.log("Photos grouped by listing:", photosByListing);
 
+    // Display all listings initially
+    displayListingsWithPhotos(listings, photosByListing);
+}
+
+/**
+ * Populate filter dropdowns with available options
+ */
+function populateFilters(listings) {
+    const typeFilter = document.getElementById("type-filter");
+    const locationFilter = document.getElementById("location-filter");
+    
+    // Clear existing options (keep "All Types" and "All Locations")
+    while (typeFilter.children.length > 1) {
+        typeFilter.removeChild(typeFilter.lastChild);
+    }
+    while (locationFilter.children.length > 1) {
+        locationFilter.removeChild(locationFilter.lastChild);
+    }
+    
+    // Get unique property types
+    const propertyTypes = [...new Set(listings.map(listing => {
+        if (listing.property_details) {
+            return Array.isArray(listing.property_details) 
+                ? listing.property_details[0]?.property_type 
+                : listing.property_details.property_type;
+        }
+        return null;
+    }).filter(type => type && type !== 'N/A'))];
+    
+    // Get unique locations
+    const locations = [...new Set(listings.map(listing => listing.location).filter(location => location))];
+    
+    // Populate property type filter
+    propertyTypes.forEach(type => {
+        const option = document.createElement("option");
+        option.value = type;
+        option.textContent = type;
+        typeFilter.appendChild(option);
+    });
+    
+    // Populate location filter
+    locations.forEach(location => {
+        const option = document.createElement("option");
+        option.value = location;
+        option.textContent = location;
+        locationFilter.appendChild(option);
+    });
+    
+    // Add event listeners for filters
+    document.getElementById("apply-filters-btn").addEventListener("click", () => applyFilters());
+    document.getElementById("search-box").addEventListener("input", () => applyFilters());
+}
+
+/**
+ * Apply filters to listings
+ */
+function applyFilters() {
+    const typeFilter = document.getElementById("type-filter").value;
+    const locationFilter = document.getElementById("location-filter").value;
+    const priceFilter = document.getElementById("price-filter").value;
+    const searchBox = document.getElementById("search-box").value.toLowerCase();
+    
+    const filteredListings = allListings.filter(listing => {
+        // Property type filter
+        if (typeFilter) {
+            const listingType = listing.property_details 
+                ? (Array.isArray(listing.property_details) 
+                    ? listing.property_details[0]?.property_type 
+                    : listing.property_details.property_type)
+                : 'N/A';
+            if (listingType !== typeFilter) return false;
+        }
+        
+        // Location filter
+        if (locationFilter && listing.location !== locationFilter) return false;
+        
+        // Price filter
+        if (priceFilter) {
+            const price = listing.price;
+            if (priceFilter === "Under $500" && price >= 500) return false;
+            if (priceFilter === "$500 - $800" && (price < 500 || price > 800)) return false;
+            if (priceFilter === "$800+" && price <= 800) return false;
+        }
+        
+        // Search filter
+        if (searchBox) {
+            const searchText = searchBox.toLowerCase();
+            const matchesName = listing.name.toLowerCase().includes(searchText);
+            const matchesLocation = listing.location.toLowerCase().includes(searchText);
+            const matchesDescription = listing.property_details?.description?.toLowerCase().includes(searchText);
+            
+            if (!matchesName && !matchesLocation && !matchesDescription) return false;
+        }
+        
+        return true;
+    });
+    
+    // Display filtered listings
+    displayFilteredListings(filteredListings);
+}
+
+/**
+ * Display filtered listings
+ */
+async function displayFilteredListings(listings) {
+    const listingContainer = document.getElementById("listing-container");
+    listingContainer.innerHTML = "";
+    
+    if (listings.length === 0) {
+        listingContainer.innerHTML = `<p class="info-message">No listings match your filters.</p>`;
+        return;
+    }
+    
+    // Fetch photos for filtered listings
+    const listingIds = listings.map(l => l.listing_id);
+    const { data: allPhotos, error: photosError } = await supabase
+        .from("photos")
+        .select("listing_id, photo_url")
+        .in("listing_id", listingIds);
+    
+    const photosByListing = {};
+    if (allPhotos) {
+        allPhotos.forEach(photo => {
+            if (!photosByListing[photo.listing_id]) {
+                photosByListing[photo.listing_id] = [];
+            }
+            photosByListing[photo.listing_id].push(photo);
+        });
+    }
+    
+    // Display each listing
+    displayListingsWithPhotos(listings, photosByListing);
+}
+
+/**
+ * Display listings with their photos
+ */
+function displayListingsWithPhotos(listings, photosByListing) {
+    const listingContainer = document.getElementById("listing-container");
+    listingContainer.innerHTML = "";
+    
+    // Display each listing
     listings.forEach(listing => {
         const avgRating = calculateAverageRating(listing.reviews);
         
-        // Handle property_details whether it's an object or array
         let propertyType = 'N/A';
         if (listing.property_details) {
             if (Array.isArray(listing.property_details)) {
@@ -183,22 +296,16 @@ async function fetchAndDisplayListings() {
         }
         
         const landlordEmail = listing.landlord_id ? listing.landlord_id.email : 'contact@landlord.com';
-        
-        // Get photos from our grouped photos object
         const photos = photosByListing[listing.listing_id] || [];
-        
-        console.log(`Listing ${listing.name} (${listing.listing_id}) has ${photos.length} photos`);
         
         listingContainer.innerHTML += createListingCard(listing, propertyType, avgRating, landlordEmail, photos);
     });
-
-    // Add event listeners for review buttons
+    
+    // Re-initialize carousels and review buttons
+    initializeImageCarousels();
     document.querySelectorAll(".btn-review").forEach(button => {
         button.addEventListener("click", openReviewModal);
     });
-
-    // Initialize image carousels
-    initializeImageCarousels();
 }
 
 function calculateAverageRating(ratingsArray) {
@@ -418,6 +525,30 @@ async function handleReviewSubmit(e) {
     }
 
     try {
+        // First verify the listing is still verified and user is a student
+        const { data: listing, error: listingError } = await supabase
+            .from("listings")
+            .select("verification_status")
+            .eq("listing_id", listingID)
+            .single();
+
+        if (listingError || !listing || listing.verification_status !== 'verified') {
+            alert("Cannot submit review: Listing is not available or not verified.");
+            return;
+        }
+
+        const { data: user, error: userError } = await supabase
+            .from("users")
+            .select("role")
+            .eq("user_id", userID)
+            .single();
+
+        if (userError || !user || user.role !== 'student') {
+            alert("Only students can submit reviews.");
+            return;
+        }
+
+        // Submit the review
         const { error } = await supabase
             .from("reviews")
             .insert([
