@@ -34,6 +34,7 @@ serve(async (req) => {
             preferred_date, 
             inquiry_message 
         } = await req.json();
+        console.log("Receiving contact request for:", target_landlord_email, "from:", sender_student_email);
 
         // 2. Format the subject and body for the landlord
         const typeLabel = request_type === 'schedule_visit' ? 'Visit Request' : 'General Inquiry';
@@ -62,7 +63,7 @@ serve(async (req) => {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                from: "Your App <anything>@pelaabgaie.resend.app",
+                from: "Your App <onboarding@resend.dev>",
                 to: target_landlord_email,
                 subject: subject,
                 text: emailBody,
