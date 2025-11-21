@@ -81,7 +81,7 @@ async function fetchAndDisplayListings() {
 
     console.log("Starting to fetch listings...");
 
-    // Fetch listings
+    // Fetch listings (removed reviews(*) from the select)
     const { data: listings, error } = await supabase
         .from("listings")
         .select(`
@@ -90,8 +90,7 @@ async function fetchAndDisplayListings() {
             location,
             price,
             landlord_id(email), 
-            property_details(property_type, bedrooms, description),
-            reviews(*)
+            property_details(property_type, bedrooms, description)
         `)
         .eq("verification_status", "verified")
         .order("created_at", { ascending: false });
@@ -113,6 +112,29 @@ async function fetchAndDisplayListings() {
 
     // Store listings globally for filtering
     allListings = listings;
+
+    // --- NEW: Fetch all reviews for all fetched listings ---
+    const { data: allReviews, error: reviewsError } = await supabase
+        .from("reviews")
+        .select(`listing_id, rating`) // Only need listing_id and rating for calculating average
+        .in("listing_id", listings.map(l => l.listing_id));
+
+    if (reviewsError) {
+        console.error("Error fetching reviews:", reviewsError);
+    }
+
+    // Group reviews by listing_id
+    const reviewsByListing = {};
+    if (allReviews) {
+        allReviews.forEach(review => {
+            if (!reviewsByListing[review.listing_id]) {
+                reviewsByListing[review.listing_id] = [];
+            }
+            // Store the full review object or just the rating
+            reviewsByListing[review.listing_id].push(review); 
+        });
+    }
+    // --- END NEW BLOCK ---
 
     // Populate filters with the listings data
     populateFilters(listings);
@@ -142,7 +164,7 @@ async function fetchAndDisplayListings() {
     console.log("Photos grouped by listing:", photosByListing);
 
     // Display all listings initially
-    displayListingsWithPhotos(listings, photosByListing);
+    displayListingsWithPhotos(listings, photosByListing, reviewsByListing);
 }
 
 /**
@@ -271,19 +293,40 @@ async function displayFilteredListings(listings) {
         });
     }
     
+    // --- NEW: Fetch reviews for filtered listings ---
+    const { data: allReviews, error: reviewsError } = await supabase
+        .from("reviews")
+        .select(`listing_id, rating`)
+        .in("listing_id", listingIds);
+        
+    const reviewsByListing = {};
+    if (allReviews) {
+        allReviews.forEach(review => {
+            if (!reviewsByListing[review.listing_id]) {
+                reviewsByListing[review.listing_id] = [];
+            }
+            reviewsByListing[review.listing_id].push(review);
+        });
+    }
+    // --- END NEW ---
+    
     // Display each listing
-    displayListingsWithPhotos(listings, photosByListing);
+    displayListingsWithPhotos(listings, photosByListing, reviewsByListing);
 }
 
 /**
- * Display listings with their photos
+ * Display listings with their photos and reviews
  */
-function displayListingsWithPhotos(listings, photosByListing) {
+function displayListingsWithPhotos(listings, photosByListing, reviewsByListing = {}) {
     const listingContainer = document.getElementById("listing-container");
     listingContainer.innerHTML = "";
     
     // Display each listing
     listings.forEach(listing => {
+        // --- NEW: Assign reviews to the listing object before passing it down ---
+        listing.reviews = reviewsByListing[listing.listing_id] || [];
+        // --- END NEW ---
+        
         const avgRating = calculateAverageRating(listing.reviews);
         
         let propertyType = 'N/A';
