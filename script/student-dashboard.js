@@ -85,7 +85,7 @@ async function fetchAndDisplayListings() {
     loadingSpinner.style.display = "flex";
     listingContainer.innerHTML = ""; // Clear existing listings
 
-    // FIX: Replaced 'image_url' with 'photos(photo_url)' to join the photos table
+    // FIX: Removed the internal comment that was breaking the query string.
     const { data: listings, error } = await supabase
         .from("listings")
         .select(`
@@ -93,7 +93,7 @@ async function fetchAndDisplayListings() {
             name,
             location,
             price,
-            photos(photo_url), // FIX: Join the photos table to get the URL(s)
+            photos(photo_url), 
             landlord_id(email), 
             property_details(property_type),
             reviews(rating)
@@ -123,7 +123,7 @@ async function fetchAndDisplayListings() {
         // Access the email using the 'landlord_id' property
         const landlordEmail = listing.landlord_id ? listing.landlord_id.email : 'contact@landlord.com'; 
         
-        // FIX: Access the first photo URL from the joined 'photos' array
+        // Access the first photo URL from the joined 'photos' array
         const firstPhoto = listing.photos.length > 0 ? listing.photos[0] : null;
         const imageUrl = firstPhoto ? firstPhoto.photo_url : './images/default-listing.jpg'; 
         
@@ -143,7 +143,7 @@ function calculateAverageRating(ratingsArray) {
     return (sum / ratingsArray.length).toFixed(1);
 }
 
-// NOTE: Added imageUrl parameter
+// HTML generation function using your existing CSS classes
 function createListingCard(listing, propertyType, avgRating, landlordEmail, imageUrl) {
     const starRatingHTML = generateStarRating(avgRating);
     // imageUrl is now passed in
