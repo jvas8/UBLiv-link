@@ -783,6 +783,8 @@ function openContactModal(event) {
     document.getElementById("contact-modal").style.display = "flex";
 }
 
+// student-dashboard.js - Replace your current handleContactSubmit function with this:
+
 async function handleContactSubmit(e) {
     e.preventDefault();
     
@@ -807,18 +809,22 @@ async function handleContactSubmit(e) {
     }
 
     try {
-        // THIS IS THE CALL TO YOUR DEPLOYED EDGE FUNCTION
-        const { error } = await supabase.rpc('send_contact_request', {
-            target_landlord_email: landlordEmail,
-            sender_student_email: studentEmail,
-            listing_ref: listingID,
-            request_type: requestType,
-            preferred_date: requestedDate || null,
-            inquiry_message: message
+        // 🚨 CORRECTED: Use supabase.functions.invoke() for Edge Functions
+        const { error } = await supabase.functions.invoke('send_contact_request', {
+            method: 'POST', // Edge Functions expect POST by default
+            body: { // The payload must be inside the 'body' property
+                target_landlord_email: landlordEmail,
+                sender_student_email: studentEmail,
+                listing_ref: listingID,
+                request_type: requestType,
+                preferred_date: requestedDate || null,
+                inquiry_message: message
+            }
         });
 
         if (error) {
             console.error("Error sending contact request:", error);
+            // This alert message is correct, but the error source is now the function execution, not the 404.
             alert("Failed to send request. Check your Supabase logs for the 'send_contact_request' function error.");
             return;
         }
