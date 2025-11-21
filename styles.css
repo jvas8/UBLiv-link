@@ -745,6 +745,26 @@ body {
     padding: 1.5rem;
   }
 }
+/* ===== RATING STYLES (REQUIRED) ===== */
+
+.rating-info {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75rem; /* Separates rating from price/location */
+}
+
+.stars {
+    color: var(--accent-color); /* Uses your primary highlight color */
+    font-size: 1.1rem;
+    letter-spacing: 2px;
+    margin-right: 0.5rem;
+}
+
+.avg-text {
+    font-size: 0.9rem;
+    color: #5A5A5A;
+    font-weight: 500;
+}
 
 /* ===== LANDLORD DASHBOARD STYLES (Integrated from dash.css) ===== */
 

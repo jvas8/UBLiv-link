@@ -85,7 +85,7 @@ async function fetchAndDisplayListings() {
     loadingSpinner.style.display = "flex";
     listingContainer.innerHTML = ""; // Clear existing listings
 
-    // Query combines data from 'listings', 'property_details', and 'reviews'
+    // Query includes image_url and joins to get the landlord's email
     const { data: listings, error } = await supabase
         .from("listings")
         .select(`
@@ -93,10 +93,12 @@ async function fetchAndDisplayListings() {
             name,
             location,
             price,
+            image_url, 
+            users(email), // Assumed join to get the landlord's email (Landlord is the user_id foreign key)
             property_details(property_type),
             reviews(rating)
-        `) // FIX: Removed inline comments that were causing a 400 Bad Request
-        .eq("verification_status", "verified") // Only show approved listings
+        `) 
+        .eq("verification_status", "approved") 
         .order("created_at", { ascending: false });
 
     loadingSpinner.style.display = "none";
@@ -117,8 +119,10 @@ async function fetchAndDisplayListings() {
         const avgRating = calculateAverageRating(listing.reviews);
         // Get property type (accessing the joined data)
         const propertyType = listing.property_details.length > 0 ? listing.property_details[0].property_type : 'N/A';
+        // Get landlord email (accessing the joined data)
+        const landlordEmail = listing.users ? listing.users.email : 'contact@landlord.com'; 
         
-        listingContainer.innerHTML += createListingCard(listing, propertyType, avgRating);
+        listingContainer.innerHTML += createListingCard(listing, propertyType, avgRating, landlordEmail);
     });
 
     // Add event listeners for the 'Leave a Review' buttons
@@ -134,20 +138,37 @@ function calculateAverageRating(ratingsArray) {
     return (sum / ratingsArray.length).toFixed(1);
 }
 
-function createListingCard(listing, propertyType, avgRating) {
+// FIX: Rewritten to match the existing styles.css structure
+function createListingCard(listing, propertyType, avgRating, landlordEmail) {
     const starRatingHTML = generateStarRating(avgRating);
+    const imageUrl = listing.image_url || './images/default-listing.jpg'; // Use a default image if none exists
     
     return `
         <div class="listing-card">
-            <h3>${listing.name}</h3>
-            <p><strong>Location:</strong> ${listing.location}</p>
-            <p><strong>Type:</strong> ${propertyType}</p>
-            <p class="price">$${listing.price} / month</p>
-            <div class="rating-info">
-                ${starRatingHTML}
-                <span class="avg-text">(${avgRating > 0 ? avgRating : 'No Reviews'})</span>
+            <img src="${imageUrl}" alt="Image of ${listing.name}">
+
+            <div class="listing-info">
+                <div class="listing-header">
+                    <h3>${listing.name}</h3>
+                    <span class="type-badge">${propertyType}</span> 
+                </div>
+
+                <div class="rating-info">
+                    ${starRatingHTML}
+                    <span class="avg-text">(${avgRating > 0 ? avgRating : 'No Reviews'})</span>
+                </div>
+
+                <p class="listing-price">
+                    $${listing.price} 
+                    <span class="price-period">/ month</span>
+                </p>
+                <p class="listing-location">${listing.location}</p>
             </div>
-            <button class="btn-review" data-listing-id="${listing.listing_id}" data-listing-title="${listing.name}">Leave a Review</button>
+            
+            <div class="listing-actions">
+                <a href="mailto:${landlordEmail}" class="btn-contact">Contact Landlord</a>
+                <button class="btn-review" data-listing-id="${listing.listing_id}" data-listing-title="${listing.name}">Leave a Review</button>
+            </div>
         </div>
     `;
 }
@@ -205,8 +226,6 @@ async function handleReviewSubmit(e) {
     const rating = document.querySelector('input[name="rating"]:checked')?.value;
     const reviewText = document.getElementById("reviewText").value;
     
-    // The submission below adheres to your 'reviews' schema: (user_id, listing_id, rating, description).
-
     if (!rating) {
         alert("Please select an overall rating (1-5 stars).");
         submitBtn.textContent = "Submit Review";
@@ -222,7 +241,7 @@ async function handleReviewSubmit(e) {
                     listing_id: listingID,
                     user_id: userID, 
                     rating: parseInt(rating),
-                    description: reviewText // Mapped to the 'description' column in your schema
+                    description: reviewText 
                 }
             ]);
 
