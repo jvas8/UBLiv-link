@@ -505,7 +505,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 location: listingLocation.trim(),
                 price: parseFloat(formData.get('price')),
                 leasing: formData.get('leasing'),
-                email: formData.get('email') || null,
             };
 
             let { data: newListing, error: listingError } = await supabase
@@ -524,7 +523,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 listing_id: newListingId,
                 property_type: formData.get('property_type'),
                 bedrooms: parseInt(formData.get('bedrooms')),
-                bathrooms: parseInt(formData.get('bathrooms')),
                 description: formData.get('description'),
             };
 
