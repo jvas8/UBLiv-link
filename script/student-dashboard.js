@@ -78,6 +78,7 @@ async function fetchAndDisplayListings() {
     loadingSpinner.style.display = "flex";
     listingContainer.innerHTML = "";
 
+    // FIXED QUERY: Properly access property_details and photos
     const { data: listings, error } = await supabase
         .from("listings")
         .select(`
@@ -101,6 +102,8 @@ async function fetchAndDisplayListings() {
         return;
     }
     
+    console.log("Fetched listings:", listings); // Debug log
+    
     if (listings.length === 0) {
         listingContainer.innerHTML = `<p class="info-message">No approved listings are currently available.</p>`;
         return;
@@ -109,7 +112,10 @@ async function fetchAndDisplayListings() {
     listings.forEach(listing => {
         const avgRating = calculateAverageRating(listing.reviews);
         
-        // FIX: Properly access property_type from the joined data
+        // DEBUG: Check what property_details contains
+        console.log("Listing property_details:", listing.property_details);
+        
+        // FIX: Properly access property_type - property_details is an array of objects
         const propertyType = listing.property_details && listing.property_details.length > 0 
             ? listing.property_details[0].property_type 
             : 'N/A';
@@ -119,10 +125,12 @@ async function fetchAndDisplayListings() {
         // FIX: Get all photos for the carousel
         const photos = listing.photos || [];
         
+        console.log("Listing photos:", photos); // Debug log
+        
         listingContainer.innerHTML += createListingCard(listing, propertyType, avgRating, landlordEmail, photos);
     });
 
-    // Add event listeners for review buttons and image carousels
+    // Add event listeners for review buttons
     document.querySelectorAll(".btn-review").forEach(button => {
         button.addEventListener("click", openReviewModal);
     });
@@ -182,8 +190,8 @@ function createListingCard(listing, propertyType, avgRating, landlordEmail, phot
  */
 function generateImageCarousel(photos, listingName) {
     if (!photos || photos.length === 0) {
-        // Fallback to default image if no photos
-        return `<img src="./images/default-listing.jpg" alt="Image of ${listingName}" class="listing-image">`;
+        // Use a working default image URL
+        return `<img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&w=600" alt="Image of ${listingName}" class="listing-image">`;
     }
 
     const carouselId = `carousel-${Math.random().toString(36).substr(2, 9)}`;
@@ -193,14 +201,14 @@ function generateImageCarousel(photos, listingName) {
     
     photos.forEach((photo, index) => {
         const isActive = index === 0 ? 'active' : '';
-        const photoUrl = photo.photo_url.startsWith('http') 
-            ? photo.photo_url 
-            : `./images/listings/${photo.photo_url}`; // Adjust path as needed
+        
+        // Use the photo URL directly - they should be full URLs from the SQL insert
+        const photoUrl = photo.photo_url;
         
         slidesHTML += `
             <div class="carousel-slide ${isActive}">
                 <img src="${photoUrl}" alt="Image ${index + 1} of ${listingName}" 
-                     onerror="this.src='./images/default-listing.jpg'">
+                     onerror="this.src='https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&w=600'">
             </div>
         `;
         
@@ -239,6 +247,9 @@ function initializeImageCarousels() {
         
         let currentSlide = 0;
 
+        // Set initial position
+        track.style.transform = `translateX(-${currentSlide * 100}%)`;
+
         function goToSlide(index) {
             if (index < 0) index = slides.length - 1;
             if (index >= slides.length) index = 0;
@@ -271,21 +282,19 @@ function initializeImageCarousels() {
         });
 
         // Auto-advance (optional)
-        let slideInterval = setInterval(() => {
-            if (slides.length > 1) {
+        if (slides.length > 1) {
+            let slideInterval = setInterval(() => {
                 goToSlide(currentSlide + 1);
-            }
-        }, 5000);
-
-        // Pause on hover
-        carousel.addEventListener('mouseenter', () => clearInterval(slideInterval));
-        carousel.addEventListener('mouseleave', () => {
-            slideInterval = setInterval(() => {
-                if (slides.length > 1) {
-                    goToSlide(currentSlide + 1);
-                }
             }, 5000);
-        });
+
+            // Pause on hover
+            carousel.addEventListener('mouseenter', () => clearInterval(slideInterval));
+            carousel.addEventListener('mouseleave', () => {
+                slideInterval = setInterval(() => {
+                    goToSlide(currentSlide + 1);
+                }, 5000);
+            });
+        }
     });
 }
 
