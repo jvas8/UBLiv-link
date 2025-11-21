@@ -9,10 +9,11 @@ const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 let currentUserID = null; 
+let currentUserEmail = null; // NEW: Store user email for contact form
 let allListings = [];
 
 document.addEventListener("DOMContentLoaded", async function() {
-    // 1. Check auth and fetch user profile to get 'user_id'
+    // 1. Check auth and fetch user profile to get 'user_id' and email
     await checkAuthAndFetchUser();
 
     // 2. Set up Event Listeners for the Review Modal
@@ -24,10 +25,24 @@ document.addEventListener("DOMContentLoaded", async function() {
 
     document.getElementById("review-form").addEventListener("submit", handleReviewSubmit);
 
-    // 3. Initial load of listings
+    // 3. Set up Event Listeners for the Contact Modal (NEW SECTION)
+    const contactModal = document.getElementById("contact-modal");
+
+    // Close handler for Contact Modal (clicking outside form)
+    contactModal.addEventListener("click", (e) => {
+        if (e.target.id === 'contact-modal') {
+            contactModal.style.display = "none";
+        }
+    });
+
+    document.getElementById("contact-form").addEventListener("submit", handleContactSubmit);
+    setupContactFormSteps(); // Function to handle next/prev buttons
+    // (END NEW SECTION)
+
+    // 4. Initial load of listings
     fetchAndDisplayListings();
 
-    // 4. Logout functionality
+    // 5. Logout functionality
     document.getElementById("logout-btn").addEventListener("click", async () => {
         await supabase.auth.signOut();
         window.location.href = "index.html";
@@ -35,7 +50,7 @@ document.addEventListener("DOMContentLoaded", async function() {
 });
 
 /**
- * Authentication and User Profile Management
+ * Authentication and User Profile Management (MODIFIED)
  */
 async function checkAuthAndFetchUser() {
     const { data: { session } } = await supabase.auth.getSession();
@@ -46,6 +61,7 @@ async function checkAuthAndFetchUser() {
     }
     
     const userEmail = session.user.email;
+    currentUserEmail = userEmail; // NEW: Store student's email
     
     const { data: userData, error } = await supabase
         .from("users")
@@ -315,7 +331,7 @@ async function displayFilteredListings(listings) {
 }
 
 /**
- * Display listings with their photos and reviews
+ * Display listings with their photos and reviews (MODIFIED)
  */
 function displayListingsWithPhotos(listings, photosByListing, reviewsByListing = {}) {
     const listingContainer = document.getElementById("listing-container");
@@ -323,7 +339,6 @@ function displayListingsWithPhotos(listings, photosByListing, reviewsByListing =
     
     // Display each listing
     listings.forEach(listing => {
-        // Assign reviews to the listing object before passing it down
         listing.reviews = reviewsByListing[listing.listing_id] || [];
         
         const avgRating = calculateAverageRating(listing.reviews);
@@ -339,29 +354,32 @@ function displayListingsWithPhotos(listings, photosByListing, reviewsByListing =
         
         const landlordEmail = listing.landlord_id ? listing.landlord_id.email : 'contact@landlord.com';
         const photos = photosByListing[listing.listing_id] || [];
-        
+
+        // Pass landlordEmail to createListingCard
         listingContainer.innerHTML += createListingCard(listing, propertyType, avgRating, landlordEmail, photos);
     });
     
-    // Re-initialize carousels and review buttons
+    // Re-initialize carousels and modal buttons
     initializeImageCarousels();
     document.querySelectorAll(".btn-review").forEach(button => {
         button.addEventListener("click", openReviewModal);
+    });
+    
+    // NEW: Attach listener to the Contact Landlord buttons
+    document.querySelectorAll(".btn-contact").forEach(button => {
+        button.addEventListener("click", openContactModal);
     });
 }
 
 function calculateAverageRating(reviewsArray) {
     if (!reviewsArray || reviewsArray.length === 0) return 0;
     
-    // Extract ratings from reviews array and ensure they are parsed as Integers
     const ratings = reviewsArray.map(review => {
-        // If review is an object with rating property
         if (typeof review === 'object' && review !== null && 'rating' in review) {
-            return parseInt(review.rating, 10); // <-- CRITICAL FIX: Ensure rating is a number
+            return parseInt(review.rating, 10);
         }
-        // If it's already a rating value (less likely with current query)
-        return parseInt(review, 10); // <-- CRITICAL FIX: Ensure rating is a number
-    }).filter(rating => !isNaN(rating)); // Filter out any non-numeric results
+        return parseInt(review, 10);
+    }).filter(rating => !isNaN(rating));
     
     if (ratings.length === 0) return 0;
 
@@ -370,14 +388,11 @@ function calculateAverageRating(reviewsArray) {
 }
 
 /**
- * Create listing card with image carousel
+ * Create listing card with image carousel (MODIFIED)
  */
 function createListingCard(listing, propertyType, avgRating, landlordEmail, photos) {
     const starRatingHTML = generateStarRating(avgRating);
-    // review count is taken directly from the listing.reviews array attached earlier
     const reviewCount = listing.reviews ? listing.reviews.length : 0;
-    
-    // Generate carousel HTML
     const carouselHTML = generateImageCarousel(photos, listing.name);
     
     return `
@@ -403,7 +418,12 @@ function createListingCard(listing, propertyType, avgRating, landlordEmail, phot
             </div>
             
             <div class="listing-actions">
-                <a href="mailto:${landlordEmail}" class="btn-contact">Contact Landlord</a>
+                <button class="btn-contact" 
+                    data-listing-id="${listing.listing_id}" 
+                    data-listing-title="${listing.name}"
+                    data-landlord-email="${landlordEmail}">
+                    Contact Landlord
+                </button>
                 <button class="btn-review" data-listing-id="${listing.listing_id}" data-listing-title="${listing.name}">Leave a Review</button>
             </div>
         </div>
@@ -592,7 +612,6 @@ async function handleReviewSubmit(e) {
         const user = userResult.data;
         const userError = userResult.error;
 
-
         if (listingError || !listing || listing.verification_status !== 'verified') {
             alert("Cannot submit review: Listing is not available or not verified.");
             return;
@@ -687,3 +706,132 @@ function updateListingCardRating(listingId, reviews) {
         }
     });
 }
+
+/**
+ * CONTACT FORM LOGIC (NEW SECTION: REQUIRED TO CALL YOUR EDGE FUNCTION)
+ */
+function setupContactFormSteps() {
+    const contactModal = document.getElementById("contact-modal");
+    const nextBtn = document.getElementById("contact-next-btn");
+    const prevBtn = document.getElementById("contact-prev-btn");
+    const formSteps = contactModal.querySelectorAll(".form-step");
+    const steps = contactModal.querySelectorAll(".step");
+    let currentStep = 0;
+
+    const updateFormDisplay = () => {
+        formSteps.forEach((step, index) => {
+            step.classList.toggle("active", index === currentStep);
+        });
+        steps.forEach((step, index) => {
+            step.classList.toggle("active", index <= currentStep);
+        });
+    };
+    
+    updateFormDisplay(); // Initialize to Step 1
+
+    nextBtn.addEventListener("click", () => {
+        // Validation check for Step 1: Request Type
+        const requestType = contactModal.querySelector('input[name="requestType"]:checked');
+        if (!requestType) {
+            alert("Please select a Request Type to continue.");
+            return;
+        }
+
+        if (currentStep < formSteps.length - 1) {
+            currentStep++;
+            updateFormDisplay();
+        }
+    });
+
+    prevBtn.addEventListener("click", () => {
+        if (currentStep > 0) {
+            currentStep--;
+            updateFormDisplay();
+        }
+    });
+}
+
+function openContactModal(event) {
+    if (!currentUserEmail) {
+        alert("Your user session email is not loaded. Please refresh.");
+        return;
+    }
+    
+    // Get data attributes from the button clicked
+    const listingId = event.target.getAttribute("data-listing-id");
+    const listingTitle = event.target.getAttribute("data-listing-title");
+    const landlordEmail = event.target.getAttribute("data-landlord-email");
+    
+    // Set hidden fields
+    document.getElementById("contact-listing-id").value = listingId;
+    document.getElementById("contact-landlord-email").value = landlordEmail;
+    
+    // Update modal title
+    document.getElementById("contact-modal-subtitle").textContent = `Listing: ${listingTitle}`;
+
+    // Reset form to Step 1 and clear fields
+    const contactForm = document.getElementById("contact-form");
+    contactForm.reset();
+    
+    // Manually reset steps
+    contactForm.querySelector('.form-step[data-step="1"]').classList.add('active');
+    contactForm.querySelector('.form-step[data-step="2"]').classList.remove('active');
+    document.getElementById("contact-progress-bar").querySelector('.step[data-step="1"]').classList.add('active');
+    document.getElementById("contact-progress-bar").querySelector('.step[data-step="2"]').classList.remove('active');
+
+    // Show modal
+    document.getElementById("contact-modal").style.display = "flex";
+}
+
+async function handleContactSubmit(e) {
+    e.preventDefault();
+    
+    const contactModal = document.getElementById("contact-modal");
+    const submitBtn = document.getElementById("send-request-btn");
+    
+    submitBtn.textContent = "Sending...";
+    submitBtn.disabled = true;
+
+    const listingID = document.getElementById("contact-listing-id").value;
+    const landlordEmail = document.getElementById("contact-landlord-email").value;
+    const requestType = contactModal.querySelector('input[name="requestType"]:checked')?.value;
+    const requestedDate = document.getElementById("requestedDate").value;
+    const message = document.getElementById("message").value;
+    const studentEmail = currentUserEmail; // The logged-in user's email
+
+    if (!studentEmail || landlordEmail === 'contact@landlord.com') {
+        alert("Error: Landlord or Student email information is missing.");
+        submitBtn.textContent = "Send Request";
+        submitBtn.disabled = false;
+        return;
+    }
+
+    try {
+        // THIS IS THE CALL TO YOUR DEPLOYED EDGE FUNCTION
+        const { error } = await supabase.rpc('send_contact_request', {
+            target_landlord_email: landlordEmail,
+            sender_student_email: studentEmail,
+            listing_ref: listingID,
+            request_type: requestType,
+            preferred_date: requestedDate || null,
+            inquiry_message: message
+        });
+
+        if (error) {
+            console.error("Error sending contact request:", error);
+            alert("Failed to send request. Check your Supabase logs for the 'send_contact_request' function error.");
+            return;
+        }
+
+        alert("Contact request sent successfully! The landlord will respond to your registered email.");
+        contactModal.style.display = "none";
+        
+    } catch (error) {
+        console.error("Unexpected error during contact submission:", error);
+        alert("An unexpected error occurred.");
+    } finally {
+        submitBtn.textContent = "Send Request";
+        submitBtn.disabled = false;
+    }
+}
+// (END NEW SECTION)
