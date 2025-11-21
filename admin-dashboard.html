@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UB Liv'Link Admin Dashboard</title>
-    <link rel="stylesheet" href="styles.css"> 
+    <link rel="stylesheet" href="dashboard-styles.css"> 
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
@@ -33,19 +33,19 @@
                 <div class="uba-stats-grid">
                     <div class="uba-stat-card primary">
                         <h3>Listings Pending Verification</h3>
-                        <p class="uba-stat-number">12</p>
+                        <p class="uba-stat-number" id="pending-verification-count">--</p>
                     </div>
                     <div class="uba-stat-card accent">
                         <h3>Total Active Listings</h3>
-                        <p class="uba-stat-number">103</p>
+                        <p class="uba-stat-number" id="active-listings-count">--</p>
                     </div>
                     <div class="uba-stat-card primary">
                         <h3>Total Landlord Registrations</h3>
-                        <p class="uba-stat-number">45</p>
+                        <p class="uba-stat-number" id="landlord-count">--</p>
                     </div>
                     <div class="uba-stat-card accent">
                         <h3>Critical Reviews Flagged</h3>
-                        <p class="uba-stat-number">7</p>
+                        <p class="uba-stat-number" id="flagged-reviews-count">--</p>
                     </div>
                 </div>
             </section>
@@ -120,7 +120,7 @@
             <section id="uba-review-report" class="uba-module">
                 <h2>⚠️ Review Moderation Report</h2>
                 <div class="uba-settings-card">
-                    <h3 style="color:#dc3545;">AI-Flagged Critical Reviews (7 Pending)</h3>
+                    <h3 style="color:#dc3545;">AI-Flagged Critical Reviews (<span id="flagged-reviews-count">7</span> Pending)</h3>
                     <form>
                         <label for="ai-flag">Filter by Critical Flag:</label>
                         <select id="ai-flag">
@@ -145,142 +145,6 @@
         </main>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const navItems = document.querySelectorAll('.uba-nav-item');
-            const modules = document.querySelectorAll('.uba-module');
-            const totalPendingElement = document.getElementById('total-pending');
-            const verifiedCountElement = document.getElementById('verified-count');
-            const progressBar = document.getElementById('uba-progress-bar');
-            
-            let verifiedCount = 5;
-            const totalPending = 12;
-
-            function switchModule(targetId, navElement) {
-                navItems.forEach(nav => nav.classList.remove('active'));
-                if (navElement) {
-                    navElement.classList.add('active');
-                }
-                modules.forEach(mod => mod.classList.remove('active'));
-                const targetModule = document.getElementById(targetId);
-                if (targetModule) {
-                    targetModule.classList.add('active');
-                }
-            }
-            
-            function updateProgressBar() {
-                const percentage = (verifiedCount / totalPending) * 100;
-                progressBar.style.width = `${percentage}%`;
-                verifiedCountElement.textContent = verifiedCount;
-            }
-
-            function handleVerificationAction(e, action) {
-                e.preventDefault();
-                const listingRow = e.target.closest('.uba-table-row');
-                const listingId = listingRow.dataset.listingId;
-                const statusElement = listingRow.querySelector('.uba-status');
-                
-                if (statusElement.textContent.trim() !== 'PENDING') {
-                    alert(`Listing ${listingId} is already ${statusElement.textContent.trim()}.`);
-                    return;
-                }
-
-                listingRow.style.opacity = 0.5;
-                
-                setTimeout(() => {
-                    if (action === 'verify') {
-                        statusElement.textContent = 'VERIFIED';
-                        statusElement.className = 'uba-status';
-                        statusElement.style.backgroundColor = '#d4edda';
-                        statusElement.style.color = '#155724';
-                        
-                        verifiedCount++;
-                        updateProgressBar();
-                        alert(`Listing ${listingId} verified!`);
-
-                    } else if (action === 'reject') {
-                        statusElement.textContent = 'REJECTED';
-                        statusElement.className = 'uba-status';
-                        statusElement.style.backgroundColor = '#f8d7da';
-                        statusElement.style.color = '#721c24';
-                        alert(`Listing ${listingId} rejected.`);
-                    }
-                    
-                    listingRow.style.opacity = 1;
-                    listingRow.querySelectorAll('.uba-verify-btn, .uba-reject-btn').forEach(btn => btn.disabled = true);
-                }, 800);
-            }
-
-            // Event Listeners for Dynamic Actions
-            navItems.forEach(item => {
-                item.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const targetId = e.currentTarget.getAttribute('href').substring(1);
-                    switchModule(targetId, e.currentTarget);
-                });
-            });
-            
-            document.querySelectorAll('.uba-verify-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => handleVerificationAction(e, 'verify'));
-            });
-
-            document.querySelectorAll('.uba-reject-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => handleVerificationAction(e, 'reject'));
-            });
-
-            // Chart.js Data Visualization
-            const ctx = document.getElementById('conversion-chart');
-            if (ctx) {
-                 new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: ['Sept', 'Oct', 'Nov', 'Dec'],
-                        datasets: [{
-                            label: 'Conversion Rate % (Views to Contact)',
-                            data: [3.5, 3.8, 4.2, 4.0],
-                            // Using RGB for #5D2D91 (primary-color)
-                            borderColor: 'rgb(93, 45, 145)', 
-                            backgroundColor: 'rgba(93, 45, 145, 0.1)',
-                            fill: true,
-                            tension: 0.3,
-                            borderWidth: 3,
-                            pointRadius: 5
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: false,
-                                title: {
-                                    display: true,
-                                    text: 'Verification Rate (%)'
-                                }
-                            }
-                        }
-                    }
-                });
-            }
-
-            updateProgressBar();
-            
-            window.openAdminLog = function() {
-                alert("Opening the System Audit Log (conceptual)...");
-            };
-            document.querySelectorAll('.uba-report-card form, .uba-settings-card form').forEach(form => {
-                form.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    alert(`Report generated! Parameters: ${new FormData(form).get('report-type') || new FormData(form).get('ai-flag')}`);
-                });
-            });
-
-            // Initial switch to overview
-            switchModule('uba-overview', document.querySelector('[href="#uba-overview"]'));
-        });
-    </script>
-</body>
+    <script type="module" src="./script/admin.js"></script>
+    </body>
 </html>
