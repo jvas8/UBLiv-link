@@ -1,4 +1,4 @@
-// admin.js - CORRECTED AND STREAMLINED AUTH
+// admin.js - CORRECTED AND CHART REMOVED
 
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -24,13 +24,12 @@ async function checkAuthAndRedirect() {
         return { authorized: false };
     }
     
-    // Get email from session for role lookup (consistent with auth.js)
     const userEmail = session.user.email; 
 
     // 1. Check the user's role in the 'users' table using email
     const { data: user, error: userError } = await supabase
         .from('users') 
-        .select('role, user_id') // Fetch role and user_id (the table's PK)
+        .select('role, user_id') 
         .eq('email', userEmail) 
         .single();
 
@@ -43,7 +42,6 @@ async function checkAuthAndRedirect() {
         return { authorized: false };
     }
     
-    // Set the user_id (UUID from your 'users' table) for future requests
     currentUserID = user.user_id; 
     return { authorized: true };
 }
@@ -84,8 +82,6 @@ async function fetchOverviewData() {
         results.totalLandlords = landlordCount || 0;
 
         // 4. Critical Reviews Flagged (Requires 'is_flagged' column in 'reviews' table)
-        // NOTE: If your 'reviews' table doesn't have a column named 'is_flagged', 
-        // this query may fail. I recommend adding 'is_flagged BOOLEAN DEFAULT FALSE' to your reviews table.
         let { count: flaggedCount, error: flaggedError } = await supabase
             .from('reviews') 
             .select('*', { count: 'exact', head: true })
@@ -137,11 +133,10 @@ function renderOverviewData(data) {
 }
 
 // ===========================================
-// UI Logic (Moved from the HTML script block)
+// UI Logic 
 // ===========================================
 
 function setupNavigation() {
-    // ... (Navigation functions remain the same)
     const navItems = document.querySelectorAll('.uba-nav-item');
     const modules = document.querySelectorAll('.uba-module');
 
@@ -168,47 +163,9 @@ function setupNavigation() {
     switchModule('uba-overview', document.querySelector('[href="#uba-overview"]'));
 }
 
-function setupVerificationChart() {
-    const ctx = document.getElementById('conversion-chart');
-    if (window.Chart && ctx) { 
-         new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: ['Sept', 'Oct', 'Nov', 'Dec'],
-                datasets: [{
-                    label: 'Verification Rate (%)',
-                    data: [85, 90, 88, 92], 
-                    borderColor: 'rgb(93, 45, 145)', 
-                    backgroundColor: 'rgba(93, 45, 145, 0.1)',
-                    fill: true,
-                    tension: 0.3,
-                    borderWidth: 3,
-                    pointRadius: 5
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: false,
-                        max: 100,
-                        title: {
-                            display: true,
-                            text: 'Verification Rate (%)'
-                        }
-                    }
-                }
-            }
-        });
-    }
-}
+// setupVerificationChart is REMOVED
 
 function setupQueueActions() {
-    // ... (Action functions remain the same for now)
     window.openAdminLog = function() {
         alert("Opening the System Audit Log (conceptual)...");
     };
@@ -230,10 +187,8 @@ function setupQueueActions() {
     function handleVerificationAction(e, action) {
         e.preventDefault();
         const listingRow = e.target.closest('.uba-table-row');
-        const listingId = listingRow.dataset.listingId;
         const statusElement = listingRow.querySelector('.uba-status');
         
-        // FUTURE: This is where you call a Supabase function to update listing_id status to 'verified' or 'rejected'.
         if (statusElement.textContent.trim() !== 'PENDING') return;
 
         listingRow.style.opacity = 0.5;
@@ -260,13 +215,13 @@ function setupQueueActions() {
 
 // --- Main Execution ---
 document.addEventListener("DOMContentLoaded", async function() {
-    // 1. Authentication Check (The security gate)
+    // 1. Authentication Check
     const { authorized } = await checkAuthAndRedirect();
     if (!authorized) return;
     
     // 2. Setup UI
     setupNavigation();
-    setupVerificationChart();
+    // setupVerificationChart() call is REMOVED
     setupQueueActions();
 
     // 3. Fetch and Render Overview Data
