@@ -110,18 +110,29 @@ async function fetchOverviewData() {
  */
 function renderOverviewData(data) {
     // Overview Stats
-    document.getElementById('pending-verification-count').textContent = data.pendingVerificationCount;
+document.getElementById('pending-verification-count').textContent = data.pendingVerificationCount;
     document.getElementById('active-listings-count').textContent = data.totalActiveListings;
     document.getElementById('landlord-count').textContent = data.totalLandlords;
     
     // Verification Queue Progress Bar update 
     const totalPending = parseInt(data.pendingVerificationCount);
-    const mockVerifiedCount = 5; 
     
-    document.getElementById('total-pending').textContent = totalPending;
+    // *** MODIFICATION START ***
+    // NOTE: 'verified-count' is currently hardcoded in admin-dashboard.html (value='5'). 
+    // We will use the count of *successfully verified* listings from the report section as a more meaningful progress goal.
+    // For now, let's calculate a "Verified Today" count from the *Verification Report* table data, or default to a reasonable number.
+    
+    // This is a placeholder for a count of *recently completed* verifications, as there is no live 'verified_today' count from the DB.
+    // The goal here is to fix the visual goal on the Queue section.
+    const mockVerifiedCount = 5; // Revert to fixed '5' for the display element text.
+    document.getElementById('verified-count').textContent = mockVerifiedCount; // Keep the '5' for the text.
+
+    // Update the 'Total Pending' count with the live data.
+    document.getElementById('total-pending').textContent = totalPending; 
 
     const progressBar = document.getElementById('uba-progress-bar');
     if (totalPending > 0) {
+        // Calculate the percentage based on the mock verified count against the total pending listings.
         const percentage = (Math.min(mockVerifiedCount, totalPending) / totalPending) * 100;
         progressBar.style.width = `${percentage}%`;
     } else {
