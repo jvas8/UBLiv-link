@@ -98,7 +98,7 @@ async function fetchAndDisplayListings() {
             property_details(property_type),
             reviews(rating)
         `) 
-        .eq("verification_status", "approved") 
+        .eq("verification_status", "verified") 
         .order("created_at", { ascending: false });
 
     loadingSpinner.style.display = "none";
