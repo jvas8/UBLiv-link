@@ -62,7 +62,7 @@ serve(async (req) => {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                from: "Your App <onboarding@resend.dev>",
+                from: "Your App <anything>@pelaabgaie.resend.app",
                 to: target_landlord_email,
                 subject: subject,
                 text: emailBody,
