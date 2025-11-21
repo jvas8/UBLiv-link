@@ -68,10 +68,11 @@ async function fetchOverviewData() {
     try {
         console.log("Starting fetchOverviewData...");
 
-        // 1. Listings Pending Verification
+        // 1. Listings Pending Verification - FILTER DIRECTLY IN QUERY
         let { data: pendingData, count: pendingCount, error: pendingError } = await supabase
             .from('listings')
-            .select('*', { count: 'exact', head: false }); // Remove head: true to see actual data
+            .select('*', { count: 'exact' })
+            .eq('verification_status', 'pending'); // Add this filter
 
         console.log("Pending listings query result:", { pendingData, pendingCount, pendingError });
 
@@ -79,16 +80,15 @@ async function fetchOverviewData() {
             console.error("Supabase Error fetching pending count:", pendingError);
             results.pendingVerificationCount = 'Error';
         } else {
-            // Filter for pending status manually
-            const pendingListings = pendingData ? pendingData.filter(listing => listing.verification_status === 'pending') : [];
-            results.pendingVerificationCount = pendingListings.length;
-            console.log("Filtered pending listings:", pendingListings);
+            results.pendingVerificationCount = pendingCount || 0;
+            console.log("Pending listings count:", results.pendingVerificationCount);
         }
 
-        // 2. Total Active Listings
+        // 2. Total Active Listings - FILTER DIRECTLY IN QUERY
         let { data: activeData, count: activeCount, error: activeError } = await supabase
             .from('listings')
-            .select('*', { count: 'exact', head: false });
+            .select('*', { count: 'exact' })
+            .eq('availability', true); // Add this filter
 
         console.log("Active listings query result:", { activeData, activeCount, activeError });
 
@@ -96,14 +96,13 @@ async function fetchOverviewData() {
             console.error("Error fetching active listings:", activeError);
             results.totalActiveListings = 'Error';
         } else {
-            const activeListings = activeData ? activeData.filter(listing => listing.availability === true) : [];
-            results.totalActiveListings = activeListings.length;
+            results.totalActiveListings = activeCount || 0;
         }
 
-        // 3. Total Landlord Registrations
+        // 3. Total Landlord Registrations (unchanged)
         let { data: landlordData, count: landlordCount, error: landlordError } = await supabase
             .from('users')
-            .select('*', { count: 'exact', head: false })
+            .select('*', { count: 'exact' })
             .eq('role', 'landlord');
 
         console.log("Landlord query result:", { landlordData, landlordCount, landlordError });
