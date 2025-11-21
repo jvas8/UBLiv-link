@@ -128,26 +128,6 @@
             
             <section id="uba-verification-report" class="uba-module">
                 <h2>📊 Verification Report</h2>
-                
-                <div class="uba-report-section">
-                    <div class="uba-report-card">
-                        <h4>Verification Compliance Overview</h4>
-                        <form id="uba-verification-report-form">
-                            <div class="uba-form-group">
-                                <label for="uba-report-type">Metric:</label>
-                                <select id="uba-report-type">
-                                    <option>Average Time to Verify (Days)</option>
-                                    <option>Rejection Rate by Document Type</option>
-                                </select>
-                            </div>
-                            <div class="uba-form-group">
-                                <label for="uba-date-range">Date Range:</label>
-                                <input type="text" id="uba-date-range" value="Last 90 Days" placeholder="Last 90 Days">
-                            </div>
-                            <button type="submit" class="uba-primary-btn">Generate Analytics</button>
-                        </form>
-                    </div>
-                </div>
 
                 <div class="uba-verification-report-table-container">
                     <div class="uba-filter-section">
@@ -207,21 +187,7 @@
             </section>
             
             <section id="uba-review-report" class="uba-module">
-                <h2>⚠️ Review Moderation Report</h2>
-                <div class="uba-settings-card">
-                    <h3 style="color:#dc3545;">AI-Flagged Critical Reviews (<span id="uba-flagged-reviews-count">7</span> Pending)</h3>
-                    <form id="uba-review-filter-form">
-                        <div class="uba-form-group">
-                            <label for="uba-ai-flag">Filter by Critical Flag:</label>
-                            <select id="uba-ai-flag">
-                                <option>High Severity (Safety/Legal risk)</option>
-                                <option>Maintenance Issue Frequency</option>
-                                <option>Moderator Action History</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="uba-primary-btn" style="background-color:#dc3545;">Search & Prioritize</button>
-                    </form>
-                </div>
+                <h2>⚠️ Review Report</h2>
 
                 <div class="uba-review-report-table-container">
                     <div class="uba-filter-section">
@@ -275,15 +241,6 @@
                     </table>
 
                     <p class="uba-no-results" id="uba-review-no-results">No matching properties found.</p>
-                </div>
-
-                <div class="uba-review-list" style="margin-top: 20px;">
-                    <div class="uba-review-card" style="border-left: 4px solid #dc3545;">
-                        <p class="uba-review-meta" style="color:#dc3545; font-weight:700;">HIGH SEVERITY FLAG | Listing: The Courtyard</p>
-                        <p class="uba-review-text">"Our heating went out last week and the landlord hasn't responded to the emergency request in 48 hours. This is unsafe."</p>
-                        <p class="uba-review-author">— Student ID 543</p>
-                        <button class="uba-action-btn uba-reject-btn" style="background-color:#dc3545; color:white;">Investigate Property</button>
-                    </div>
                 </div>
             </section>
             
