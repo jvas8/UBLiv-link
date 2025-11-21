@@ -223,6 +223,149 @@ function setupQueueActions() {
 }
 
 
+function setupVerificationForm() {
+    const formContainer = document.getElementById('uba-verification-form-container');
+    const openFormButtons = document.querySelectorAll('.uba-verify-form-btn');
+    const closeFormButton = document.querySelector('.uba-close-form-btn');
+    const cancelFormButton = document.querySelector('.uba-cancel-form-btn');
+    const verificationForm = document.getElementById('uba-verification-form');
+
+    function openForm(listingId, landlordName) {
+        document.getElementById('uba-listing-id').value = listingId;
+        document.getElementById('uba-landlord-name').value = landlordName;
+        formContainer.style.display = 'block';
+        
+        // Scroll to form
+        formContainer.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function closeForm() {
+        formContainer.style.display = 'none';
+        verificationForm.reset();
+    }
+
+    // Event listeners for opening forms
+    openFormButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const listingId = button.getAttribute('data-listing-id');
+            const row = button.closest('.uba-table-row');
+            const landlordName = row.querySelector('div:first-child').textContent.split('(')[1].replace(')', '').trim();
+            openForm(listingId, landlordName);
+        });
+    });
+
+    // Event listeners for closing forms
+    closeFormButton.addEventListener('click', closeForm);
+    cancelFormButton.addEventListener('click', closeForm);
+
+    // Form submission
+    verificationForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const listingId = document.getElementById('uba-listing-id').value;
+        const status = document.getElementById('uba-status').value;
+        const notes = document.getElementById('uba-notes').value;
+
+        // Update the table row
+        const row = document.querySelector(`[data-listing-id="${listingId}"]`);
+        if (row) {
+            const statusElement = row.querySelector('.uba-status');
+            if (status === 'verified') {
+                statusElement.textContent = 'VERIFIED';
+                statusElement.className = 'uba-status uba-status-verified';
+            } else {
+                statusElement.textContent = 'REJECTED';
+                statusElement.className = 'uba-status uba-status-rejected';
+            }
+        }
+
+        // Show success message
+        alert(`Listing ${listingId} has been ${status === 'verified' ? 'verified' : 'rejected'} successfully!`);
+        
+        // Close form
+        closeForm();
+    });
+}
+
+function setupReportFilters() {
+    // Verification report filtering
+    const searchInput = document.getElementById('uba-search-input');
+    const filterStatus = document.getElementById('uba-filter-status');
+    const verificationTable = document.getElementById('uba-verification-table');
+    const noResults = document.getElementById('uba-no-results');
+
+    function filterVerificationTable() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const statusFilter = filterStatus.value;
+        const rows = verificationTable.getElementsByTagName('tr');
+        let visibleCount = 0;
+
+        for (let i = 1; i < rows.length; i++) {
+            const cells = rows[i].getElementsByTagName('td');
+            const propertyName = cells[0].textContent.toLowerCase();
+            const status = cells[1].textContent.toLowerCase();
+
+            const matchesSearch = propertyName.includes(searchTerm);
+            const matchesStatus = statusFilter === 'all' || status.includes(statusFilter);
+
+            if (matchesSearch && matchesStatus) {
+                rows[i].style.display = '';
+                visibleCount++;
+            } else {
+                rows[i].style.display = 'none';
+            }
+        }
+
+        noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+    }
+
+    searchInput.addEventListener('input', filterVerificationTable);
+    filterStatus.addEventListener('change', filterVerificationTable);
+
+    // Review report filtering
+    const reviewSearchInput = document.getElementById('uba-review-search-input');
+    const filterRating = document.getElementById('uba-filter-rating');
+    const reviewTable = document.getElementById('uba-review-table');
+    const reviewNoResults = document.getElementById('uba-review-no-results');
+
+    function filterReviewTable() {
+        const searchTerm = reviewSearchInput.value.toLowerCase();
+        const ratingFilter = filterRating.value;
+        const rows = reviewTable.getElementsByTagName('tr');
+        let visibleCount = 0;
+
+        for (let i = 1; i < rows.length; i++) {
+            const cells = rows[i].getElementsByTagName('td');
+            const propertyName = cells[0].textContent.toLowerCase();
+            const rating = cells[1].textContent.match(/\d/)[0];
+
+            const matchesSearch = propertyName.includes(searchTerm);
+            const matchesRating = ratingFilter === 'all' || rating === ratingFilter;
+
+            if (matchesSearch && matchesRating) {
+                rows[i].style.display = '';
+                visibleCount++;
+            } else {
+                rows[i].style.display = 'none';
+            }
+        }
+
+        reviewNoResults.style.display = visibleCount === 0 ? 'block' : 'none';
+    }
+
+    reviewSearchInput.addEventListener('input', filterReviewTable);
+    filterRating.addEventListener('change', filterReviewTable);
+}
+
+// Export functions
+function ubaExportReport() {
+    alert('📋 Verification report exported successfully!');
+}
+
+function ubaExportReviewReport() {
+    alert('📊 Review report exported successfully as CSV!');
+}
+
 // --- Main Execution ---
 document.addEventListener("DOMContentLoaded", async function() {
     // 1. Authentication Check
@@ -232,8 +375,10 @@ document.addEventListener("DOMContentLoaded", async function() {
     // 2. Setup UI
     setupNavigation();
     setupQueueActions();
+    setupVerificationForm();
+    setupReportFilters();
 
-    // 3. Attach Logout Listener (NEW)
+    // 3. Attach Logout Listener
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
         logoutBtn.addEventListener('click', handleLogout);

@@ -2034,11 +2034,10 @@ input:checked + .slider:before {
 
 /* ======================================================== */
 /* ADMIN DASHBOARD STYLES (UB Admin - uba- prefix) */
-/* This block should be appended to your existing CSS file. */
 /* ======================================================== */
 
+
 .uba-dashboard {
-    /* Ensures body overrides any general dashboard body styles */
     background-color: var(--background-color); 
     color: var(--text-color);
 }
@@ -2103,32 +2102,34 @@ input:checked + .slider:before {
     font-weight: 700;
 }
 
-.uba-audit-btn {
-    background-color: var(--accent-color);
-    color: var(--primary-color);
-    padding: 12px 20px;
-    border: none;
-    border-radius: var(--border-radius);
-    font-weight: 700;
-    cursor: pointer;
-    margin: 30px;
-    transition: all 0.2s;
-    width: calc(100% - 60px);
-    box-shadow: var(--shadow-base);
-    text-transform: uppercase;
-    font-size: 0.9em;
+.uba-sidebar-footer {
+    padding: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: auto;
 }
 
-.uba-audit-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-heavy);
+.uba-logout-btn {
+    width: 100%;
+    padding: 10px;
+    background-color: #f8f9fa;
+    color: #dc3545;
+    border: 1px solid #dc3545;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.uba-logout-btn:hover {
+    background-color: #dc3545;
+    color: white;
 }
 
 /* --- CONTENT AREA & MODULES --- */
-
 .uba-content-area {
     flex-grow: 1;
     padding: 40px;
+    background-color: var(--background-color);
 }
 
 .uba-module {
@@ -2148,10 +2149,10 @@ input:checked + .slider:before {
 
 .uba-stat-card {
     padding: 25px;
-    border-radius: var(--border-radius);
-    box-shadow: var(--shadow-subtle);
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
     transition: transform 0.3s ease-out;
-    background-color: var(--surface-color);
+    background-color: var(--white);
     border: 1px solid #e8e8e8;
     border-left: 5px solid transparent;
 }
@@ -2171,42 +2172,43 @@ input:checked + .slider:before {
 }
 
 .uba-stat-card.primary {
-    border-left-color: var(--primary-color); /* Purple accent */
+    border-left-color: var(--primary-color);
 }
 
 .uba-stat-card.accent {
-    border-left-color: var(--accent-color); /* Yellow accent */
+    border-left-color: var(--accent-color);
 }
 
 .uba-stat-number {
     font-size: 3em;
     font-weight: 800;
     margin: 0;
-    color: var(--primary-color); /* Purple for number */
+    color: var(--primary-color);
 }
 
 /* --- Verification Table --- */
 .uba-verification-table {
-    border-radius: var(--border-radius);
+    border-radius: 12px;
     overflow: hidden;
-    box-shadow: var(--shadow-subtle);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    margin-top: 20px;
 }
 
 .uba-table-header, .uba-table-row {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr 1.5fr; /* Adjusted for better layout */
+    grid-template-columns: 2fr 1fr 1fr 1fr;
     gap: 10px;
-    background-color: var(--surface-color);
+    background-color: var(--white);
     align-items: center;
     padding: 18px 25px;
     font-size: 0.9em;
 }
 
 .uba-table-header {
-    background-color: var(--background-color);
+    background-color: var(--primary-color);
     font-weight: 700;
-    color: var(--text-light);
-    border-bottom: 2px solid #ddd;
+    color: var(--white);
+    border-bottom: 2px solid var(--primary-color);
     text-transform: uppercase;
     letter-spacing: 0.5px;
     font-size: 0.8em;
@@ -2220,7 +2222,7 @@ input:checked + .slider:before {
     background-color: #fcfcfc;
 }
 
-/* Status Styling (From original <style> block) */
+/* Status Styling */
 .uba-status {
     padding: 5px 10px;
     border-radius: 4px;
@@ -2232,8 +2234,16 @@ input:checked + .slider:before {
     background-color: #fff3cd; 
     color: #856404; 
 }
+.uba-status-verified { 
+    background-color: #d4edda; 
+    color: #155724; 
+}
+.uba-status-rejected { 
+    background-color: #f8d7da; 
+    color: #721c24; 
+}
 
-/* Action Buttons (Used in table rows) */
+/* Action Buttons */
 .uba-action-btn {
     padding: 8px 12px;
     border-radius: 6px;
@@ -2246,24 +2256,24 @@ input:checked + .slider:before {
     font-size: 0.85em;
 }
 
-.uba-view-docs-btn { 
+.uba-verify-form-btn { 
     color: var(--primary-color); 
     border-color: var(--primary-color); 
 }
 
-.uba-view-docs-btn:hover {
+.uba-verify-form-btn:hover {
     background-color: var(--primary-color);
     color: var(--white);
     border-color: var(--primary-color);
 }
 
 .uba-verify-btn {
-    background-color: #28a745; /* Green */
+    background-color: #28a745;
     color: var(--white);
     border-color: #28a745;
 }
 .uba-reject-btn {
-    background-color: #dc3545; /* Red */
+    background-color: #dc3545;
     color: var(--white);
     border-color: #dc3545;
 }
@@ -2276,39 +2286,157 @@ input:checked + .slider:before {
     border-radius: 8px;
     height: 18px;
     overflow: hidden;
-    box-shadow: var(--shadow-inset);
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 .uba-progress-bar {
     height: 100%;
-    background-color: #28a745; /* Green for success */
+    background-color: #28a745;
     transition: width 0.5s ease-in-out;
     background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
     background-size: 40px 40px;
     box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.1);
 }
 
-/* --- Chart and Report Containers --- */
-.uba-chart-container {
-    background-color: var(--surface-color);
-    padding: 25px;
-    border-radius: var(--border-radius);
-    box-shadow: var(--shadow-subtle);
-    margin-bottom: 30px;
-    height: 350px; /* Give Chart space */
+/* --- Verification Form --- */
+.uba-verification-form-container {
+    background-color: var(--white);
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    margin-top: 30px;
+    padding: 0;
+    overflow: hidden;
 }
 
+.uba-verification-form-header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #9B4DB3 100%);
+    color: var(--white);
+    padding: 25px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.uba-verification-form-header h3 {
+    margin: 0;
+    font-size: 1.5em;
+}
+
+.uba-close-form-btn {
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--white);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.uba-close-form-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.uba-verification-form-content {
+    padding: 30px;
+}
+
+.uba-verification-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.uba-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.uba-form-group label {
+    font-weight: 600;
+    color: var(--primary-color);
+    font-size: 0.9rem;
+}
+
+.uba-form-group input,
+.uba-form-group select,
+.uba-form-group textarea {
+    padding: 12px 15px;
+    border-radius: 8px;
+    border: 2px solid rgba(125, 45, 145, 0.1);
+    font-size: 1rem;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.3s;
+    background: #F9F6FB;
+    color: var(--text-color-main);
+}
+
+.uba-form-group input:focus,
+.uba-form-group select:focus,
+.uba-form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    background: var(--white);
+}
+
+.uba-form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.uba-form-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.uba-primary-btn {
+    background-color: var(--primary-color);
+    color: var(--white);
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(125, 45, 145, 0.2);
+}
+
+.uba-primary-btn:hover {
+    background-color: #6B2680;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(125, 45, 145, 0.3);
+}
+
+.uba-secondary-btn {
+    background-color: #6c757d;
+    color: var(--white);
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.uba-secondary-btn:hover {
+    background-color: #5a6268;
+    transform: translateY(-2px);
+}
+
+/* --- Report Sections --- */
 .uba-report-section {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 25px;
+    margin-bottom: 30px;
 }
 
 .uba-report-card, .uba-settings-card {
-    background-color: var(--surface-color);
+    background-color: var(--white);
     padding: 30px;
-    border-radius: var(--border-radius);
-    box-shadow: var(--shadow-subtle);
-    border-top: 4px solid var(--primary-color); /* Purple border accent */
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    border-top: 4px solid var(--primary-color);
     transition: transform 0.2s;
 }
 
@@ -2323,70 +2451,123 @@ input:checked + .slider:before {
     font-size: 1.2em;
 }
 
-.uba-report-card form label, .uba-settings-card form label {
-    display: block;
-    margin-top: 15px;
-    font-weight: 600;
-    color: var(--text-color);
+/* --- Data Tables for Reports --- */
+.uba-verification-report-table-container,
+.uba-review-report-table-container {
+    background-color: var(--white);
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    margin-top: 20px;
 }
 
-.uba-report-card select, .uba-report-card input, .uba-settings-card select {
+.uba-filter-section {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.uba-filter-section input,
+.uba-filter-section select {
+    padding: 10px 12px;
+    border: 2px solid rgba(125, 45, 145, 0.1);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    background: #F9F6FB;
+}
+
+.uba-data-table {
     width: 100%;
-    max-width: none; /* Override general form input width */
-    padding: 12px;
-    margin-top: 5px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    box-sizing: border-box;
-    transition: border-color 0.2s, box-shadow 0.2s;
-    font-size: 1em;
+    border-collapse: collapse;
+    margin-top: 1rem;
 }
 
-.uba-primary-btn {
+.uba-data-table th,
+.uba-data-table td {
+    text-align: left;
+    padding: 0.9rem;
+    border-bottom: 1px solid #E5E5E5;
+    font-size: 0.95rem;
+}
+
+.uba-data-table th {
     background-color: var(--primary-color);
-    color: var(--white);
-    padding: 10px 20px;
-    border: none;
-    border-radius: 8px;
+    color: white;
     font-weight: 600;
-    cursor: pointer;
-    margin-top: 25px;
-    transition: all 0.2s;
-    box-shadow: var(--shadow-base);
 }
 
-.uba-primary-btn:hover {
-    background-color: var(--primary-light);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-subtle);
+.uba-data-table tr:hover {
+    background-color: #FAF5FB;
 }
 
-/* --- Review Report Specifics --- */
+.uba-no-results {
+    text-align: center;
+    color: #888;
+    margin-top: 1rem;
+    display: none;
+}
+
+/* --- Review List --- */
 .uba-review-list {
     margin-top: 20px;
 }
 
 .uba-review-card {
-    background-color: var(--surface-color);
+    background-color: var(--white);
     padding: 20px;
-    border-radius: var(--border-radius);
-    box-shadow: var(--shadow-subtle);
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
     margin-bottom: 20px;
 }
 
 .uba-review-meta {
     font-size: 0.9em;
     margin-bottom: 5px;
+    font-weight: 600;
 }
 
 .uba-review-text {
     font-style: italic;
     color: var(--text-color);
     margin: 5px 0 10px 0;
+    line-height: 1.5;
 }
 
 .uba-review-author {
     font-size: 0.8em;
     color: var(--text-light);
     text-align: right;
+}
+
+/* Mobile Responsive */
+@media (max-width: 968px) {
+    .uba-wrapper {
+        flex-direction: column;
+    }
+    
+    .uba-sidebar {
+        width: 100%;
+        height: auto;
+    }
+    
+    .uba-content-area {
+        padding: 20px;
+    }
+    
+    .uba-table-header,
+    .uba-table-row {
+        grid-template-columns: 1fr;
+        gap: 5px;
+    }
+    
+    .uba-filter-section {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .uba-form-actions {
+        flex-direction: column;
+    }
 }
