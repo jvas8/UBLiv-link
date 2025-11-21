@@ -1,4 +1,4 @@
-// admin.js - CORRECTED AND CHART REMOVED
+// admin.js - CORRECTED, CHART REMOVED, AND LOGOUT ADDED
 
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -9,6 +9,18 @@ const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 let currentUserID = null;
+
+/**
+ * Handles the Supabase sign-out process and redirects to the login page.
+ */
+async function handleLogout() {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+        console.error("Logout Error:", error);
+    }
+    // Redirect to the login page (assuming it's at the root '/')
+    window.location.replace('/'); 
+}
 
 /**
  * Ensures the user is logged in AND has the 'admin' role. 
@@ -163,8 +175,6 @@ function setupNavigation() {
     switchModule('uba-overview', document.querySelector('[href="#uba-overview"]'));
 }
 
-// setupVerificationChart is REMOVED
-
 function setupQueueActions() {
     window.openAdminLog = function() {
         alert("Opening the System Audit Log (conceptual)...");
@@ -221,10 +231,15 @@ document.addEventListener("DOMContentLoaded", async function() {
     
     // 2. Setup UI
     setupNavigation();
-    // setupVerificationChart() call is REMOVED
     setupQueueActions();
 
-    // 3. Fetch and Render Overview Data
+    // 3. Attach Logout Listener (NEW)
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', handleLogout);
+    }
+
+    // 4. Fetch and Render Overview Data
     const data = await fetchOverviewData();
     renderOverviewData(data);
 });
