@@ -72,7 +72,7 @@ async function fetchOverviewData() {
         let { data: pendingData, count: pendingCount, error: pendingError } = await supabase
             .from('listings')
             .select('*', { count: 'exact' })
-            .eq('verification_status', 'pending'); // Add this filter
+            .eq('verification_status', 'verified'); // Add this filter
 
         console.log("Pending listings query result:", { pendingData, pendingCount, pendingError });
 
