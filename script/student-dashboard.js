@@ -96,7 +96,7 @@ async function fetchAndDisplayListings() {
             property_details(property_type),
             reviews(rating)
         `) // FIX: Removed inline comments that were causing a 400 Bad Request
-        .eq("verification_status", "approved") // Only show approved listings
+        .eq("verification_status", "verified") // Only show approved listings
         .order("created_at", { ascending: false });
 
     loadingSpinner.style.display = "none";
