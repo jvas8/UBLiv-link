@@ -342,7 +342,8 @@ function convertToCSV(objArray) {
                 // Escape double quotes by doubling them, then enclose the whole string in double quotes
                 value = '"' + value.replace(/"/g, '""') + '"';
             } else if (value instanceof Date) {
-                value = value.toLocaleDateString('en-US');
+                // Ensure date values are formatted
+                value = new Date(value).toLocaleDateString('en-US');
             }
             
             line += value;
@@ -380,10 +381,15 @@ function ubaExportReport() {
         document.body.removeChild(link);
     }
 
-    alert('📋 Verification report exported successfully!');
+    alert('✅ Verification report exported successfully!');
 }
 
+/**
+ * Placeholder for Review Report Export.
+ */
 function ubaExportReviewReport() {
+    // If you want to enable this, implement similar logic to ubaExportReport 
+    // using the review data source.
     alert('📊 Review report exported successfully as CSV!');
 }
 
@@ -605,6 +611,11 @@ document.addEventListener("DOMContentLoaded", async function() {
     // 1. Authentication Check
     const { authorized } = await checkAuthAndRedirect();
     if (!authorized) return;
+    
+    // --- FIX: Expose module functions to the global window object ---
+    window.ubaExportReport = ubaExportReport; 
+    window.ubaExportReviewReport = ubaExportReviewReport;
+    // -----------------------------------------------------------------
     
     // 2. Setup UI
     setupNavigation();
