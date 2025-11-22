@@ -1950,6 +1950,10 @@ input:checked + .slider:before {
 .landing-page .hero-content {
   flex: 1;
 }
+.landing-page .hero-content p{
+  color:white;
+}
+
 
 .landing-page .hero-visual {
   flex: 1;
