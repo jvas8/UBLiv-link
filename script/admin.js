@@ -1,4 +1,4 @@
-// admin.js - FULLY IMPLEMENTED VERIFICATION QUEUE & REPORT LOGIC
+// admin.js - FULLY IMPLEMENTED VERIFICATION QUEUE & REPORT LOGIC WITH CSV EXPORT
 
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -9,6 +9,7 @@ const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 let currentUserID = null;
+let currentReportData = []; // Global variable to store report data for export
 
 /**
  * Handles the Supabase sign-out process and redirects to the login page.
@@ -245,7 +246,7 @@ async function loadVerificationQueue() {
 }
 
 // ===========================================
-// VERIFICATION REPORT LOGIC (NEW)
+// VERIFICATION REPORT LOGIC
 // ===========================================
 
 /**
@@ -284,6 +285,8 @@ async function fetchVerificationReportData() {
  * Renders the data into the Verification Report table.
  */
 function renderVerificationReport(listings) {
+    currentReportData = listings; // SAVE THE DATA FOR EXPORT
+    
     // Select the table body using the new ID
     const tableBody = document.querySelector('#uba-verification-report-table tbody');
     if (!tableBody) return; 
@@ -307,6 +310,82 @@ function renderVerificationReport(listings) {
     });
 }
 
+// ===========================================
+// CSV EXPORT LOGIC
+// ===========================================
+
+/**
+ * Helper function to convert JSON array to CSV string.
+ */
+function convertToCSV(objArray) {
+    const array = typeof objArray !== 'object' ? JSON.parse(objArray) : objArray;
+    let str = '';
+    
+    // Get headers (using only the keys we need for the report)
+    const headers = ["listing_id", "name", "status", "verifier", "date", "notes"];
+    const displayHeaders = ["Listing ID", "Property Name", "Status", "Verified By", "Date", "Notes"];
+    
+    str += displayHeaders.join(',') + '\r\n'; // Add header row
+
+    // Process each row (listing)
+    for (let i = 0; i < array.length; i++) {
+        let line = '';
+        for (let j = 0; j < headers.length; j++) {
+            if (line !== '') line += ',';
+
+            let value = array[i][headers[j]];
+            
+            // Handle null/undefined values and escape any commas/quotes in string fields
+            if (value === null || value === undefined) {
+                value = '';
+            } else if (typeof value === 'string') {
+                // Escape double quotes by doubling them, then enclose the whole string in double quotes
+                value = '"' + value.replace(/"/g, '""') + '"';
+            } else if (value instanceof Date) {
+                value = value.toLocaleDateString('en-US');
+            }
+            
+            line += value;
+        }
+        str += line + '\r\n';
+    }
+
+    return str;
+}
+
+/**
+ * Initiates the download of the Verification Report as a CSV file.
+ */
+function ubaExportReport() {
+    if (currentReportData.length === 0) {
+        alert("Cannot export: No verification records found.");
+        return;
+    }
+    
+    const csvString = convertToCSV(currentReportData);
+    const filename = `Verification_Report_${new Date().toISOString().slice(0, 10)}.csv`;
+    
+    // Create a Blob from the CSV string
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    
+    // Create a temporary link element to trigger the download
+    const link = document.createElement("a");
+    if (link.download !== undefined) { 
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", filename);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    alert('📋 Verification report exported successfully!');
+}
+
+function ubaExportReviewReport() {
+    alert('📊 Review report exported successfully as CSV!');
+}
 
 // ===========================================
 // UI Logic 
@@ -437,7 +516,6 @@ function setupVerificationForm() {
             const reportData = await fetchVerificationReportData();
             renderVerificationReport(reportData);
 
-
         } else {
              alert(`❌ Failed to update listing ${listingId}. Check console for errors.`);
         }
@@ -520,15 +598,6 @@ function setupReportFilters() {
 
     reviewSearchInput.addEventListener('input', filterReviewTable);
     filterRating.addEventListener('change', filterReviewTable);
-}
-
-// Export functions
-function ubaExportReport() {
-    alert('📋 Verification report exported successfully!');
-}
-
-function ubaExportReviewReport() {
-    alert('📊 Review report exported successfully as CSV!');
 }
 
 // --- Main Execution ---
