@@ -9,7 +9,8 @@ const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 let currentUserID = null;
-let currentReportData = []; // Global variable to store report data for export
+let currentReportData = []; // Global variable for Verification Report data
+let currentReviewReportData = []; // <--- NEW: Global variable for Review Report data
 
 /**
  * Handles the Supabase sign-out process and redirects to the login page.
@@ -285,9 +286,8 @@ async function fetchVerificationReportData() {
  * Renders the data into the Verification Report table.
  */
 function renderVerificationReport(listings) {
-    currentReportData = listings; // SAVE THE DATA FOR EXPORT
-    
-    // Select the table body using the new ID
+    currentReportData = listings; // Save for CSV export
+
     const tableBody = document.querySelector('#uba-verification-report-table tbody');
     if (!tableBody) return; 
 
@@ -311,23 +311,107 @@ function renderVerificationReport(listings) {
 }
 
 // ===========================================
+// REVIEW REPORT LOGIC (NEW)
+// ===========================================
+
+/**
+ * Fetches listings with nested reviews and aggregates them.
+ */
+async function fetchReviewReportData() {
+    // 1. Fetch listings and their associated reviews
+    let { data: listings, error } = await supabase
+        .from('listings')
+        .select(`
+            listing_id,
+            name,
+            reviews(rating, description, created_at)
+        `)
+        .not('reviews', 'is', null); // Only listings that have reviews
+
+    if (error) {
+        console.error("Error fetching review report data:", error.message);
+        return [];
+    }
+
+    // 2. Client-side aggregation
+    return listings.map(listing => {
+        const reviews = listing.reviews || [];
+        let totalRating = 0;
+        let totalReviews = reviews.length;
+        let latestReviewDescription = 'No comments yet.';
+
+        if (totalReviews > 0) {
+            // Sort by date descending to find the latest comment
+            reviews.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            latestReviewDescription = reviews[0].description || 'No comments yet.';
+            
+            // Sum up ratings
+            totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
+        }
+
+        const avgRating = totalReviews > 0 ? (totalRating / totalReviews).toFixed(1) : 'N/A';
+        const avgStars = totalReviews > 0 ? '⭐ ' + avgRating : 'N/A';
+
+        return {
+            listing_id: listing.listing_id,
+            name: listing.name,
+            avgRating: avgStars,
+            totalReviews: totalReviews,
+            commonFeedback: latestReviewDescription
+        };
+    }).filter(item => item.totalReviews > 0); // Only return listings with at least one review
+}
+
+/**
+ * Renders the aggregated review data into the Review Report table.
+ */
+function renderReviewReport(data) {
+    currentReviewReportData = data; // Save for CSV export
+
+    const tableBody = document.querySelector('#uba-review-table tbody');
+    if (!tableBody) return; 
+
+    tableBody.innerHTML = ''; // Clear mock data
+    
+    if (data.length === 0) {
+        document.getElementById('uba-review-no-results').style.display = 'block';
+        return;
+    }
+
+    document.getElementById('uba-review-no-results').style.display = 'none';
+
+    data.forEach(item => {
+        const row = document.createElement('tr');
+        row.setAttribute('data-rating', item.avgRating.replace('⭐ ', '').split('.')[0]);
+
+        row.innerHTML = `
+            <td>${item.name}</td>
+            <td>${item.avgRating}</td>
+            <td>${item.totalReviews}</td>
+            <td>${item.commonFeedback}</td>
+        `;
+        
+        tableBody.appendChild(row);
+    });
+}
+
+
+// ===========================================
 // CSV EXPORT LOGIC
 // ===========================================
 
 /**
  * Helper function to convert JSON array to CSV string.
+ * This is generalized to handle different report types.
  */
-function convertToCSV(objArray) {
+function convertToCSV(objArray, headers, displayHeaders) {
     const array = typeof objArray !== 'object' ? JSON.parse(objArray) : objArray;
     let str = '';
     
-    // Get headers (using only the keys we need for the report)
-    const headers = ["listing_id", "name", "status", "verifier", "date", "notes"];
-    const displayHeaders = ["Listing ID", "Property Name", "Status", "Verified By", "Date", "Notes"];
-    
-    str += displayHeaders.join(',') + '\r\n'; // Add header row
+    // Add header row
+    str += displayHeaders.join(',') + '\r\n';
 
-    // Process each row (listing)
+    // Process each row (item)
     for (let i = 0; i < array.length; i++) {
         let line = '';
         for (let j = 0; j < headers.length; j++) {
@@ -335,10 +419,11 @@ function convertToCSV(objArray) {
 
             let value = array[i][headers[j]];
             
-            // Handle null/undefined values and escape any commas/quotes in string fields
             if (value === null || value === undefined) {
                 value = '';
             } else if (typeof value === 'string') {
+                // Remove the star emoji for cleaner CSV export
+                value = value.replace('⭐ ', ''); 
                 // Escape double quotes by doubling them, then enclose the whole string in double quotes
                 value = '"' + value.replace(/"/g, '""') + '"';
             } else if (value instanceof Date) {
@@ -354,6 +439,7 @@ function convertToCSV(objArray) {
     return str;
 }
 
+
 /**
  * Initiates the download of the Verification Report as a CSV file.
  */
@@ -363,13 +449,14 @@ function ubaExportReport() {
         return;
     }
     
-    const csvString = convertToCSV(currentReportData);
+    const headers = ["listing_id", "name", "status", "verifier", "date", "notes"];
+    const displayHeaders = ["Listing ID", "Property Name", "Status", "Verified By", "Date", "Notes"];
+    
+    const csvString = convertToCSV(currentReportData, headers, displayHeaders);
     const filename = `Verification_Report_${new Date().toISOString().slice(0, 10)}.csv`;
     
-    // Create a Blob from the CSV string
     const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
     
-    // Create a temporary link element to trigger the download
     const link = document.createElement("a");
     if (link.download !== undefined) { 
         const url = URL.createObjectURL(blob);
@@ -385,11 +472,33 @@ function ubaExportReport() {
 }
 
 /**
- * Placeholder for Review Report Export.
+ * Initiates the download of the Review Report as a CSV file.
  */
 function ubaExportReviewReport() {
-    // If you want to enable this, implement similar logic to ubaExportReport 
-    // using the review data source.
+    if (currentReviewReportData.length === 0) {
+        alert("Cannot export: No review records found.");
+        return;
+    }
+    
+    const headers = ["listing_id", "name", "avgRating", "totalReviews", "commonFeedback"];
+    const displayHeaders = ["Listing ID", "Property Name", "Average Rating", "Total Reviews", "Latest Feedback"];
+    
+    const csvString = convertToCSV(currentReviewReportData, headers, displayHeaders);
+    const filename = `Review_Report_${new Date().toISOString().slice(0, 10)}.csv`;
+    
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    
+    const link = document.createElement("a");
+    if (link.download !== undefined) { 
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", filename);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
     alert('📊 Review report exported successfully as CSV!');
 }
 
@@ -521,6 +630,10 @@ function setupVerificationForm() {
             // 4. Reload the verification report table
             const reportData = await fetchVerificationReportData();
             renderVerificationReport(reportData);
+            
+            // 5. Reload review report (in case verification status affects visibility/reviews)
+            const reviewData = await fetchReviewReportData();
+            renderReviewReport(reviewData);
 
         } else {
              alert(`❌ Failed to update listing ${listingId}. Check console for errors.`);
@@ -536,7 +649,6 @@ function setupReportFilters() {
     // Verification report filtering
     const searchInput = document.getElementById('uba-search-input');
     const filterStatus = document.getElementById('uba-filter-status');
-    // NOTE: Updated ID to match HTML change
     const verificationTable = document.getElementById('uba-verification-report-table');
     const noResults = document.getElementById('uba-no-results');
 
@@ -549,6 +661,9 @@ function setupReportFilters() {
         // Note: Starts at 1 to skip the <thead> row
         for (let i = 1; i < rows.length; i++) {
             const cells = rows[i].getElementsByTagName('td');
+            // Safely check if cells exist
+            if (cells.length < 5) continue; 
+            
             const propertyName = cells[0].textContent.toLowerCase();
             const status = cells[1].textContent.toLowerCase();
 
@@ -569,7 +684,7 @@ function setupReportFilters() {
     searchInput.addEventListener('input', filterVerificationTable);
     filterStatus.addEventListener('change', filterVerificationTable);
 
-    // Review report filtering
+    // Review report filtering (UPDATED to use dynamic data attributes)
     const reviewSearchInput = document.getElementById('uba-review-search-input');
     const filterRating = document.getElementById('uba-filter-rating');
     const reviewTable = document.getElementById('uba-review-table');
@@ -582,13 +697,17 @@ function setupReportFilters() {
         let visibleCount = 0;
 
         for (let i = 1; i < rows.length; i++) {
-            const cells = rows[i].getElementsByTagName('td');
+            const row = rows[i];
+            const cells = row.getElementsByTagName('td');
+            
+            if (cells.length < 4) continue;
+
             const propertyName = cells[0].textContent.toLowerCase();
-            // Assuming rating is always the first character in the second cell, e.g., "⭐ 4.5"
-            const ratingMatch = cells[1].textContent.match(/\d/); 
-            const rating = ratingMatch ? ratingMatch[0] : null;
+            // Get the integer rating from the data attribute set in renderReviewReport
+            const rating = row.getAttribute('data-rating'); 
 
             const matchesSearch = propertyName.includes(searchTerm);
+            // Check if the rating filter is 'all' OR if the row's rating matches the selected filter
             const matchesRating = ratingFilter === 'all' || rating === ratingFilter;
 
             if (matchesSearch && matchesRating) {
@@ -605,6 +724,7 @@ function setupReportFilters() {
     reviewSearchInput.addEventListener('input', filterReviewTable);
     filterRating.addEventListener('change', filterReviewTable);
 }
+
 
 // --- Main Execution ---
 document.addEventListener("DOMContentLoaded", async function() {
@@ -638,7 +758,11 @@ document.addEventListener("DOMContentLoaded", async function() {
     // 6. Setup the Verification Form handlers (MUST be called after loadVerificationQueue)
     setupVerificationForm(); 
     
-    // 7. Fetch and Render Verification Report Data (NEW)
+    // 7. Fetch and Render Verification Report Data
     const reportData = await fetchVerificationReportData();
     renderVerificationReport(reportData);
+
+    // 8. Fetch and Render Review Report Data (NEW)
+    const reviewData = await fetchReviewReportData();
+    renderReviewReport(reviewData);
 });
