@@ -1,32 +1,25 @@
-// admin.js - FULLY IMPLEMENTED VERIFICATION QUEUE & REPORT LOGIC WITH CSV EXPORT
 
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-// Supabase client definition (Using your previously provided details)
 const supabaseUrl = "https://dquslrxlpmrersnjybym.supabase.co";
 const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxdXNscnhscG1yZXJzbmp5YnltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxNDg4NTYsImV4cCI6MjA3ODcyNDg1Nn0.ICkT2aVP_Ngr3Z24V2b9WLUxvcM-e6B84WkATqt94a8";
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 let currentUserID = null;
-let currentReportData = []; // Global variable for Verification Report data
-let currentReviewReportData = []; // <--- NEW: Global variable for Review Report data
+let currentReportData = []; 
+let currentReviewReportData = []; 
 
-/**
- * Handles the Supabase sign-out process and redirects to the login page.
- */
+
 async function handleLogout() {
     const { error } = await supabase.auth.signOut();
     if (error) {
         console.error("Logout Error:", error);
     }
-    // Redirect to the login page (assuming it's at the root '/')
     window.location.replace('/'); 
 }
 
-/**
- * Ensures the user is logged in AND has the 'admin' role. 
- */
+
 async function checkAuthAndRedirect() {
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
@@ -48,7 +41,6 @@ async function checkAuthAndRedirect() {
     if (userError || !user || user.role !== 'admin') {
         console.error("User is not an admin, profile not found, or error during role check.", userError);
         alert("Access Denied. You must be an administrator to view this page.");
-        // Sign out and redirect if not an admin
         await supabase.auth.signOut();
         window.location.replace('/'); 
         return { authorized: false };
@@ -58,9 +50,6 @@ async function checkAuthAndRedirect() {
     return { authorized: true };
 }
 
-/**
- * Fetches all necessary count data for the Admin Overview dashboard.
- */
 async function fetchOverviewData() {
     const results = {};
 
@@ -112,18 +101,14 @@ async function fetchOverviewData() {
     return results;
 }
 
-/**
- * Renders the fetched data into the overview cards in the DOM.
- */
+
 function renderOverviewData(data) {
     // Overview Stats
     document.getElementById('pending-verification-count').textContent = data.pendingVerificationCount;
     document.getElementById('active-listings-count').textContent = data.totalActiveListings;
     document.getElementById('landlord-count').textContent = data.totalLandlords;
     
-    // Verification Queue Progress Bar update 
     const totalPending = parseInt(data.pendingVerificationCount);
-    // Use mockVerifiedCount for initial visualization
     const mockVerifiedCount = 5; 
     
     document.getElementById('verified-count').textContent = mockVerifiedCount; 
@@ -131,11 +116,9 @@ function renderOverviewData(data) {
 
     const progressBar = document.getElementById('uba-progress-bar');
     if (totalPending > 0) {
-        // Calculate the percentage based on mock verified count against the total pending listings.
         const percentage = (Math.min(mockVerifiedCount, totalPending) / totalPending) * 100;
         progressBar.style.width = `${percentage}%`;
     } else {
-        // Set to 100% if no listings are pending
         progressBar.style.width = '100%'; 
     }
 }
@@ -144,16 +127,14 @@ function renderOverviewData(data) {
 // VERIFICATION QUEUE LOGIC
 // ===========================================
 
-/**
- * Updates a listing's verification status and associated feedback in Supabase.
- */
+
 async function updateListingVerificationStatus(listingId, status, notes) {
     const { data, error } = await supabase
         .from('listings')
         .update({ 
             verification_status: status, 
             feedback: notes,
-            verified_by_id: currentUserID // SAVES the admin's user_id
+            verified_by_id: currentUserID 
         })
         .eq('listing_id', listingId)
         .select();
@@ -167,14 +148,9 @@ async function updateListingVerificationStatus(listingId, status, notes) {
     return true;
 }
 
-/**
- * Fetches all pending listings along with the landlord's name.
- */
 async function fetchPendingListings() {
-    // Joins 'listings' with 'users' to get the landlord's name
     let { data: listings, error } = await supabase
         .from('listings')
-        // NOTE: Changed select path to match user's previous code, assuming users!listings_landlord_id_fkey is correct
         .select('*, landlord:users!listings_landlord_id_fkey(name)') 
         .eq('verification_status', 'pending')
         .order('created_at', { ascending: true });
@@ -184,7 +160,6 @@ async function fetchPendingListings() {
         return [];
     }
     
-    // Flatten the result for easier rendering
     return listings.map(listing => ({
         listing_id: listing.listing_id,
         name: listing.name,
@@ -194,13 +169,10 @@ async function fetchPendingListings() {
     }));
 }
 
-/**
- * Renders the pending listings into the Verification Queue table, replacing mock data.
- */
+
 function renderPendingListings(listings) {
     const tableContainer = document.querySelector('.uba-verification-table');
     
-    // Clear all rows in the table container, but re-add header
     tableContainer.innerHTML = `
         <div class="uba-table-header">
             <div>Property & Landlord</div>
@@ -234,13 +206,10 @@ function renderPendingListings(listings) {
         tableContainer.appendChild(row);
     });
 
-    // Re-setup the event listeners for the new "Open Form" buttons
     setupVerificationFormListeners();
 }
 
-/**
- * Orchestrates the loading and rendering of the Verification Queue.
- */
+
 async function loadVerificationQueue() {
     const pendingListings = await fetchPendingListings();
     renderPendingListings(pendingListings);
@@ -250,9 +219,6 @@ async function loadVerificationQueue() {
 // VERIFICATION REPORT LOGIC
 // ===========================================
 
-/**
- * Fetches all verified or rejected listings for the Verification Report.
- */
 async function fetchVerificationReportData() {
     let { data: listings, error } = await supabase
         .from('listings')
@@ -282,16 +248,14 @@ async function fetchVerificationReportData() {
     }));
 }
 
-/**
- * Renders the data into the Verification Report table.
- */
+
 function renderVerificationReport(listings) {
-    currentReportData = listings; // Save for CSV export
+    currentReportData = listings; 
 
     const tableBody = document.querySelector('#uba-verification-report-table tbody');
     if (!tableBody) return; 
 
-    tableBody.innerHTML = ''; // Clear mock data
+    tableBody.innerHTML = ''; 
     
     listings.forEach(listing => {
         const row = document.createElement('tr');
@@ -341,11 +305,9 @@ async function fetchReviewReportData() {
         let latestReviewDescription = 'No comments yet.';
 
         if (totalReviews > 0) {
-            // Sort by date descending to find the latest comment
             reviews.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
             latestReviewDescription = reviews[0].description || 'No comments yet.';
             
-            // Sum up ratings
             totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
         }
 
@@ -359,19 +321,19 @@ async function fetchReviewReportData() {
             totalReviews: totalReviews,
             commonFeedback: latestReviewDescription
         };
-    }).filter(item => item.totalReviews > 0); // Only return listings with at least one review
+    }).filter(item => item.totalReviews > 0);
 }
 
 /**
  * Renders the aggregated review data into the Review Report table.
  */
 function renderReviewReport(data) {
-    currentReviewReportData = data; // Save for CSV export
+    currentReviewReportData = data; 
 
     const tableBody = document.querySelector('#uba-review-table tbody');
     if (!tableBody) return; 
 
-    tableBody.innerHTML = ''; // Clear mock data
+    tableBody.innerHTML = ''; 
     
     if (data.length === 0) {
         document.getElementById('uba-review-no-results').style.display = 'block';
@@ -400,18 +362,12 @@ function renderReviewReport(data) {
 // CSV EXPORT LOGIC
 // ===========================================
 
-/**
- * Helper function to convert JSON array to CSV string.
- * This is generalized to handle different report types.
- */
 function convertToCSV(objArray, headers, displayHeaders) {
     const array = typeof objArray !== 'object' ? JSON.parse(objArray) : objArray;
     let str = '';
     
-    // Add header row
     str += displayHeaders.join(',') + '\r\n';
 
-    // Process each row (item)
     for (let i = 0; i < array.length; i++) {
         let line = '';
         for (let j = 0; j < headers.length; j++) {
@@ -422,12 +378,9 @@ function convertToCSV(objArray, headers, displayHeaders) {
             if (value === null || value === undefined) {
                 value = '';
             } else if (typeof value === 'string') {
-                // Remove the star emoji for cleaner CSV export
                 value = value.replace('⭐ ', ''); 
-                // Escape double quotes by doubling them, then enclose the whole string in double quotes
                 value = '"' + value.replace(/"/g, '""') + '"';
             } else if (value instanceof Date) {
-                // Ensure date values are formatted
                 value = new Date(value).toLocaleDateString('en-US');
             }
             
@@ -534,8 +487,6 @@ function setupNavigation() {
 }
 
 function setupQueueActions() {
-    // Keeping this function but removing the mock verification logic 
-    // to avoid conflict with the form-based verification.
     window.openAdminLog = function() {
         alert("Opening the System Audit Log (conceptual)...");
     };
@@ -552,16 +503,14 @@ function setupVerificationFormListeners() {
     const formContainer = document.getElementById('uba-verification-form-container');
 
     openFormButtons.forEach(button => {
-        // Clone and replace to clear existing listeners
         const newButton = button.cloneNode(true);
         button.parentNode.replaceChild(newButton, button);
         
         newButton.addEventListener('click', function() {
             const listingId = this.getAttribute('data-listing-id');
             const row = this.closest('.uba-table-row');
-            // Extract landlord name from the row's first div content (e.g., "The Courtyard, Unit 7 (John Smith)")
             const propertyText = row.querySelector('div:first-child').textContent;
-            const match = propertyText.match(/\(([^)]+)\)/); // Grab text inside parentheses
+            const match = propertyText.match(/\(([^)]+)\)/);
             const landlordName = match ? match[1].trim() : 'N/A';
             
             document.getElementById('uba-listing-id').value = listingId;
@@ -595,7 +544,7 @@ function setupVerificationForm() {
     setupVerificationFormListeners();
 
     // Form submission
-    verificationForm.addEventListener('submit', async (e) => { // IMPORTANT: Must be async
+    verificationForm.addEventListener('submit', async (e) => { 
         e.preventDefault();
         
         const listingId = document.getElementById('uba-listing-id').value;
@@ -639,7 +588,6 @@ function setupVerificationForm() {
              alert(`❌ Failed to update listing ${listingId}. Check console for errors.`);
         }
 
-        // Re-enable button
         submitBtn.textContent = originalText;
         submitBtn.disabled = false;
     });
@@ -658,10 +606,8 @@ function setupReportFilters() {
         const rows = verificationTable.getElementsByTagName('tr');
         let visibleCount = 0;
 
-        // Note: Starts at 1 to skip the <thead> row
         for (let i = 1; i < rows.length; i++) {
             const cells = rows[i].getElementsByTagName('td');
-            // Safely check if cells exist
             if (cells.length < 5) continue; 
             
             const propertyName = cells[0].textContent.toLowerCase();
@@ -684,7 +630,6 @@ function setupReportFilters() {
     searchInput.addEventListener('input', filterVerificationTable);
     filterStatus.addEventListener('change', filterVerificationTable);
 
-    // Review report filtering (UPDATED to use dynamic data attributes)
     const reviewSearchInput = document.getElementById('uba-review-search-input');
     const filterRating = document.getElementById('uba-filter-rating');
     const reviewTable = document.getElementById('uba-review-table');
@@ -703,11 +648,9 @@ function setupReportFilters() {
             if (cells.length < 4) continue;
 
             const propertyName = cells[0].textContent.toLowerCase();
-            // Get the integer rating from the data attribute set in renderReviewReport
             const rating = row.getAttribute('data-rating'); 
 
             const matchesSearch = propertyName.includes(searchTerm);
-            // Check if the rating filter is 'all' OR if the row's rating matches the selected filter
             const matchesRating = ratingFilter === 'all' || rating === ratingFilter;
 
             if (matchesSearch && matchesRating) {
@@ -732,7 +675,6 @@ document.addEventListener("DOMContentLoaded", async function() {
     const { authorized } = await checkAuthAndRedirect();
     if (!authorized) return;
     
-    // --- FIX: Expose module functions to the global window object ---
     window.ubaExportReport = ubaExportReport; 
     window.ubaExportReviewReport = ubaExportReviewReport;
     // -----------------------------------------------------------------
