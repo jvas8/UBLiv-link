@@ -1,4 +1,4 @@
-// admin.js - FULLY IMPLEMENTED VERIFICATION QUEUE LOGIC
+// admin.js - FULLY IMPLEMENTED VERIFICATION QUEUE & REPORT LOGIC
 
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -121,7 +121,8 @@ function renderOverviewData(data) {
     
     // Verification Queue Progress Bar update 
     const totalPending = parseInt(data.pendingVerificationCount);
-    const mockVerifiedCount = 5; // Using mock value from HTML for visualization
+    // Use mockVerifiedCount for initial visualization
+    const mockVerifiedCount = 5; 
     
     document.getElementById('verified-count').textContent = mockVerifiedCount; 
     document.getElementById('total-pending').textContent = totalPending; 
@@ -132,12 +133,13 @@ function renderOverviewData(data) {
         const percentage = (Math.min(mockVerifiedCount, totalPending) / totalPending) * 100;
         progressBar.style.width = `${percentage}%`;
     } else {
-        progressBar.style.width = '100%';
+        // Set to 100% if no listings are pending
+        progressBar.style.width = '100%'; 
     }
 }
 
 // ===========================================
-// NEW VERIFICATION QUEUE LOGIC
+// VERIFICATION QUEUE LOGIC
 // ===========================================
 
 /**
@@ -148,7 +150,8 @@ async function updateListingVerificationStatus(listingId, status, notes) {
         .from('listings')
         .update({ 
             verification_status: status, 
-            feedback: notes
+            feedback: notes,
+            verified_by_id: currentUserID // SAVES the admin's user_id
         })
         .eq('listing_id', listingId)
         .select();
@@ -169,7 +172,8 @@ async function fetchPendingListings() {
     // Joins 'listings' with 'users' to get the landlord's name
     let { data: listings, error } = await supabase
         .from('listings')
-        .select('*, users!listings_landlord_id_fkey(name)')
+        // NOTE: Changed select path to match user's previous code, assuming users!listings_landlord_id_fkey is correct
+        .select('*, landlord:users!listings_landlord_id_fkey(name)') 
         .eq('verification_status', 'pending')
         .order('created_at', { ascending: true });
 
@@ -182,7 +186,7 @@ async function fetchPendingListings() {
     return listings.map(listing => ({
         listing_id: listing.listing_id,
         name: listing.name,
-        landlord_name: listing.users ? listing.users.name : 'N/A',
+        landlord_name: listing.landlord ? listing.landlord.name : 'N/A',
         created_at: listing.created_at,
         verification_status: listing.verification_status
     }));
@@ -194,7 +198,7 @@ async function fetchPendingListings() {
 function renderPendingListings(listings) {
     const tableContainer = document.querySelector('.uba-verification-table');
     
-    // Clear all rows in the table container
+    // Clear all rows in the table container, but re-add header
     tableContainer.innerHTML = `
         <div class="uba-table-header">
             <div>Property & Landlord</div>
@@ -239,6 +243,70 @@ async function loadVerificationQueue() {
     const pendingListings = await fetchPendingListings();
     renderPendingListings(pendingListings);
 }
+
+// ===========================================
+// VERIFICATION REPORT LOGIC (NEW)
+// ===========================================
+
+/**
+ * Fetches all verified or rejected listings for the Verification Report.
+ */
+async function fetchVerificationReportData() {
+    let { data: listings, error } = await supabase
+        .from('listings')
+        .select(`
+            listing_id,
+            name,
+            verification_status,
+            feedback,
+            created_at,
+            verifier:users!listings_verified_by_id_fkey(name)
+        `)
+        .neq('verification_status', 'pending')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error("Error fetching verification report data:", error.message);
+        return [];
+    }
+
+    return listings.map(listing => ({
+        listing_id: listing.listing_id,
+        name: listing.name,
+        status: listing.verification_status,
+        date: listing.created_at,
+        notes: listing.feedback || 'N/A',
+        verifier: listing.verifier ? listing.verifier.name : 'Unknown Admin'
+    }));
+}
+
+/**
+ * Renders the data into the Verification Report table.
+ */
+function renderVerificationReport(listings) {
+    // Select the table body using the new ID
+    const tableBody = document.querySelector('#uba-verification-report-table tbody');
+    if (!tableBody) return; 
+
+    tableBody.innerHTML = ''; // Clear mock data
+    
+    listings.forEach(listing => {
+        const row = document.createElement('tr');
+        const formattedDate = new Date(listing.date).toLocaleDateString('en-US');
+        const statusClass = listing.status === 'verified' ? 'uba-status-verified' : 'uba-status-rejected';
+
+        row.innerHTML = `
+            <td>${listing.name}</td>
+            <td><span class="uba-status ${statusClass}">${listing.status.toUpperCase()}</span></td>
+            <td>${listing.verifier}</td>
+            <td>${formattedDate}</td>
+            <td>${listing.notes}</td>
+        `;
+        
+        tableBody.appendChild(row);
+    });
+}
+
 
 // ===========================================
 // UI Logic 
@@ -290,7 +358,7 @@ function setupVerificationFormListeners() {
     const formContainer = document.getElementById('uba-verification-form-container');
 
     openFormButtons.forEach(button => {
-        // Remove existing listener to prevent duplicates
+        // Clone and replace to clear existing listeners
         const newButton = button.cloneNode(true);
         button.parentNode.replaceChild(newButton, button);
         
@@ -364,6 +432,11 @@ function setupVerificationForm() {
             const overviewData = await fetchOverviewData();
             renderOverviewData(overviewData);
             await loadVerificationQueue(); 
+            
+            // 4. Reload the verification report table
+            const reportData = await fetchVerificationReportData();
+            renderVerificationReport(reportData);
+
 
         } else {
              alert(`❌ Failed to update listing ${listingId}. Check console for errors.`);
@@ -379,7 +452,8 @@ function setupReportFilters() {
     // Verification report filtering
     const searchInput = document.getElementById('uba-search-input');
     const filterStatus = document.getElementById('uba-filter-status');
-    const verificationTable = document.getElementById('uba-verification-table');
+    // NOTE: Updated ID to match HTML change
+    const verificationTable = document.getElementById('uba-verification-report-table');
     const noResults = document.getElementById('uba-no-results');
 
     function filterVerificationTable() {
@@ -483,4 +557,8 @@ document.addEventListener("DOMContentLoaded", async function() {
     
     // 6. Setup the Verification Form handlers (MUST be called after loadVerificationQueue)
     setupVerificationForm(); 
+    
+    // 7. Fetch and Render Verification Report Data (NEW)
+    const reportData = await fetchVerificationReportData();
+    renderVerificationReport(reportData);
 });
