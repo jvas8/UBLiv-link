@@ -1,4 +1,4 @@
-// admin.js - CORRECTED, CHART REMOVED, AND LOGOUT ADDED
+// admin.js - FULLY IMPLEMENTED VERIFICATION QUEUE LOGIC
 
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -24,14 +24,12 @@ async function handleLogout() {
 
 /**
  * Ensures the user is logged in AND has the 'admin' role. 
- * This acts as a security gate on the admin-dashboard page.
  */
 async function checkAuthAndRedirect() {
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
     if (sessionError || !session) {
         console.log("No active session found. Redirecting to login.");
-        // Redirect to the login page
         window.location.replace('/'); 
         return { authorized: false };
     }
@@ -60,55 +58,45 @@ async function checkAuthAndRedirect() {
 
 /**
  * Fetches all necessary count data for the Admin Overview dashboard.
- * Uses the correct schema columns: verification_status, availability, role.
  */
 async function fetchOverviewData() {
     const results = {};
 
     try {
-        console.log("Starting fetchOverviewData...");
-
-        // 1. Listings Pending Verification - FILTER DIRECTLY IN QUERY
-        let { data: pendingData, count: pendingCount, error: pendingError } = await supabase
+        // 1. Listings Pending Verification
+        let { count: pendingCount, error: pendingError } = await supabase
             .from('listings')
-            .select('*', { count: 'exact' })
-            .eq('verification_status', 'pending'); // Add this filter
-
-        console.log("Pending listings query result:", { pendingData, pendingCount, pendingError });
+            .select('*', { count: 'exact', head: true })
+            .eq('verification_status', 'pending');
 
         if (pendingError) {
-            console.error("Supabase Error fetching pending count:", pendingError);
+            console.error("Supabase Error fetching pending count:", pendingError.message);
             results.pendingVerificationCount = 'Error';
         } else {
             results.pendingVerificationCount = pendingCount || 0;
-            console.log("Pending listings count:", results.pendingVerificationCount);
         }
 
-        // 2. Total Active Listings - FILTER DIRECTLY IN QUERY
-        let { data: activeData, count: activeCount, error: activeError } = await supabase
+        // 2. Total Active Listings
+        let { count: activeCount, error: activeError } = await supabase
             .from('listings')
-            .select('*', { count: 'exact' })
-            .eq('availability', true); // Add this filter
-
-        console.log("Active listings query result:", { activeData, activeCount, activeError });
+            .select('*', { count: 'exact', head: true })
+            .eq('availability', true);
 
         if (activeError) {
-            console.error("Error fetching active listings:", activeError);
+            console.error("Error fetching active listings:", activeError.message);
             results.totalActiveListings = 'Error';
         } else {
             results.totalActiveListings = activeCount || 0;
         }
 
-        // 3. Total Landlord Registrations (unchanged)
-        let { data: landlordData, count: landlordCount, error: landlordError } = await supabase
+        // 3. Total Landlord Registrations
+        let { count: landlordCount, error: landlordError } = await supabase
             .from('users')
-            .select('*', { count: 'exact' })
+            .select('*', { count: 'exact', head: true })
             .eq('role', 'landlord');
 
-        console.log("Landlord query result:", { landlordData, landlordCount, landlordError });
-
         if (landlordError) {
-            console.error("Error fetching landlords:", landlordError);
+            console.error("Error fetching landlords:", landlordError.message);
             results.totalLandlords = 'Error';
         } else {
             results.totalLandlords = landlordCount || 0;
@@ -116,49 +104,140 @@ async function fetchOverviewData() {
 
     } catch (error) {
         console.error("Fatal Error fetching overview data:", error);
-        return {
-            pendingVerificationCount: 'Error',
-            totalActiveListings: 'Error',
-            totalLandlords: 'Error',
-        };
+        return { pendingVerificationCount: 'Error', totalActiveListings: 'Error', totalLandlords: 'Error' };
     }
     
-    console.log("Final results:", results);
     return results;
 }
+
 /**
  * Renders the fetched data into the overview cards in the DOM.
  */
 function renderOverviewData(data) {
     // Overview Stats
-document.getElementById('pending-verification-count').textContent = data.pendingVerificationCount;
+    document.getElementById('pending-verification-count').textContent = data.pendingVerificationCount;
     document.getElementById('active-listings-count').textContent = data.totalActiveListings;
     document.getElementById('landlord-count').textContent = data.totalLandlords;
     
     // Verification Queue Progress Bar update 
     const totalPending = parseInt(data.pendingVerificationCount);
+    const mockVerifiedCount = 5; // Using mock value from HTML for visualization
     
-    // *** MODIFICATION START ***
-    // NOTE: 'verified-count' is currently hardcoded in admin-dashboard.html (value='5'). 
-    // We will use the count of *successfully verified* listings from the report section as a more meaningful progress goal.
-    // For now, let's calculate a "Verified Today" count from the *Verification Report* table data, or default to a reasonable number.
-    
-    // This is a placeholder for a count of *recently completed* verifications, as there is no live 'verified_today' count from the DB.
-    // The goal here is to fix the visual goal on the Queue section.
-    const mockVerifiedCount = 5; // Revert to fixed '5' for the display element text.
-    document.getElementById('verified-count').textContent = mockVerifiedCount; // Keep the '5' for the text.
-
-    // Update the 'Total Pending' count with the live data.
+    document.getElementById('verified-count').textContent = mockVerifiedCount; 
     document.getElementById('total-pending').textContent = totalPending; 
 
     const progressBar = document.getElementById('uba-progress-bar');
     if (totalPending > 0) {
-        // Calculate the percentage based on the mock verified count against the total pending listings.
+        // Calculate the percentage based on mock verified count against the total pending listings.
         const percentage = (Math.min(mockVerifiedCount, totalPending) / totalPending) * 100;
         progressBar.style.width = `${percentage}%`;
     } else {
         progressBar.style.width = '100%';
     }
+}
+
+// ===========================================
+// NEW VERIFICATION QUEUE LOGIC
+// ===========================================
+
+/**
+ * Updates a listing's verification status and associated feedback in Supabase.
+ */
+async function updateListingVerificationStatus(listingId, status, notes) {
+    const { data, error } = await supabase
+        .from('listings')
+        .update({ 
+            verification_status: status, 
+            feedback: notes
+        })
+        .eq('listing_id', listingId)
+        .select();
+
+    if (error) {
+        console.error("Error updating listing status:", error);
+        return false;
+    }
+
+    console.log(`Listing ${listingId} successfully updated to: ${status}`, data);
+    return true;
+}
+
+/**
+ * Fetches all pending listings along with the landlord's name.
+ */
+async function fetchPendingListings() {
+    // Joins 'listings' with 'users' to get the landlord's name
+    let { data: listings, error } = await supabase
+        .from('listings')
+        .select('*, users!listings_landlord_id_fkey(name)')
+        .eq('verification_status', 'pending')
+        .order('created_at', { ascending: true });
+
+    if (error) {
+        console.error("Error fetching pending listings:", error.message);
+        return [];
+    }
+    
+    // Flatten the result for easier rendering
+    return listings.map(listing => ({
+        listing_id: listing.listing_id,
+        name: listing.name,
+        landlord_name: listing.users ? listing.users.name : 'N/A',
+        created_at: listing.created_at,
+        verification_status: listing.verification_status
+    }));
+}
+
+/**
+ * Renders the pending listings into the Verification Queue table, replacing mock data.
+ */
+function renderPendingListings(listings) {
+    const tableContainer = document.querySelector('.uba-verification-table');
+    
+    // Clear all rows in the table container
+    tableContainer.innerHTML = `
+        <div class="uba-table-header">
+            <div>Property & Landlord</div>
+            <div>Date Submitted</div>
+            <div>Status</div>
+            <div>Verification Form</div>
+        </div>`;
+    
+    if (listings.length === 0) {
+        const noResultsRow = document.createElement('div');
+        noResultsRow.className = 'uba-table-row uba-no-listings';
+        noResultsRow.innerHTML = `<div style="grid-column: 1 / span 4; text-align: center; padding: 10px;">🎉 No pending listings! Great job!</div>`;
+        tableContainer.appendChild(noResultsRow);
+        return;
+    }
+
+    listings.forEach(listing => {
+        const row = document.createElement('div');
+        row.className = 'uba-table-row';
+        row.setAttribute('data-listing-id', listing.listing_id);
+        
+        const formattedDate = new Date(listing.created_at).toLocaleDateString('en-US');
+        
+        row.innerHTML = `
+            <div>${listing.name} (${listing.landlord_name})</div>
+            <div>${formattedDate}</div>
+            <div class="uba-status uba-status-pending">${listing.verification_status.toUpperCase()}</div>
+            <div><button class="uba-action-btn uba-verify-form-btn" data-listing-id="${listing.listing_id}">Open Form</button></div>
+        `;
+        
+        tableContainer.appendChild(row);
+    });
+
+    // Re-setup the event listeners for the new "Open Form" buttons
+    setupVerificationFormListeners();
+}
+
+/**
+ * Orchestrates the loading and rendering of the Verification Queue.
+ */
+async function loadVerificationQueue() {
+    const pendingListings = await fetchPendingListings();
+    renderPendingListings(pendingListings);
 }
 
 // ===========================================
@@ -193,6 +272,8 @@ function setupNavigation() {
 }
 
 function setupQueueActions() {
+    // Keeping this function but removing the mock verification logic 
+    // to avoid conflict with the form-based verification.
     window.openAdminLog = function() {
         alert("Opening the System Audit Log (conceptual)...");
     };
@@ -202,105 +283,95 @@ function setupQueueActions() {
             alert(`Report generated! Parameters: ${new FormData(form).get('report-type') || new FormData(form).get('ai-flag')}`);
         });
     });
-
-    document.querySelectorAll('.uba-verify-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => handleVerificationAction(e, 'verify'));
-    });
-
-    document.querySelectorAll('.uba-reject-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => handleVerificationAction(e, 'reject'));
-    });
-    
-    function handleVerificationAction(e, action) {
-        e.preventDefault();
-        const listingRow = e.target.closest('.uba-table-row');
-        const statusElement = listingRow.querySelector('.uba-status');
-        
-        if (statusElement.textContent.trim() !== 'PENDING') return;
-
-        listingRow.style.opacity = 0.5;
-        
-        setTimeout(() => {
-            if (action === 'verify') {
-                statusElement.textContent = 'VERIFIED';
-                statusElement.className = 'uba-status';
-                statusElement.style.backgroundColor = '#d4edda';
-                statusElement.style.color = '#155724';
-            } else if (action === 'reject') {
-                statusElement.textContent = 'REJECTED';
-                statusElement.className = 'uba-status';
-                statusElement.style.backgroundColor = '#f8d7da';
-                statusElement.style.color = '#721c24';
-            }
-            
-            listingRow.style.opacity = 1;
-            listingRow.querySelectorAll('.uba-verify-btn, .uba-reject-btn').forEach(btn => btn.disabled = true);
-        }, 800);
-    }
 }
 
+function setupVerificationFormListeners() {
+    const openFormButtons = document.querySelectorAll('.uba-verify-form-btn');
+    const formContainer = document.getElementById('uba-verification-form-container');
+
+    openFormButtons.forEach(button => {
+        // Remove existing listener to prevent duplicates
+        const newButton = button.cloneNode(true);
+        button.parentNode.replaceChild(newButton, button);
+        
+        newButton.addEventListener('click', function() {
+            const listingId = this.getAttribute('data-listing-id');
+            const row = this.closest('.uba-table-row');
+            // Extract landlord name from the row's first div content (e.g., "The Courtyard, Unit 7 (John Smith)")
+            const propertyText = row.querySelector('div:first-child').textContent;
+            const match = propertyText.match(/\(([^)]+)\)/); // Grab text inside parentheses
+            const landlordName = match ? match[1].trim() : 'N/A';
+            
+            document.getElementById('uba-listing-id').value = listingId;
+            document.getElementById('uba-landlord-name').value = landlordName;
+            formContainer.style.display = 'block';
+            
+            // Scroll to form
+            formContainer.scrollIntoView({ behavior: 'smooth' });
+        });
+    });
+}
 
 function setupVerificationForm() {
     const formContainer = document.getElementById('uba-verification-form-container');
-    const openFormButtons = document.querySelectorAll('.uba-verify-form-btn');
     const closeFormButton = document.querySelector('.uba-close-form-btn');
     const cancelFormButton = document.querySelector('.uba-cancel-form-btn');
     const verificationForm = document.getElementById('uba-verification-form');
 
-    function openForm(listingId, landlordName) {
-        document.getElementById('uba-listing-id').value = listingId;
-        document.getElementById('uba-landlord-name').value = landlordName;
-        formContainer.style.display = 'block';
-        
-        // Scroll to form
-        formContainer.scrollIntoView({ behavior: 'smooth' });
-    }
-
     function closeForm() {
         formContainer.style.display = 'none';
         verificationForm.reset();
+        // Clear status selection on close
+        document.getElementById('uba-status').value = ""; 
     }
-
-    // Event listeners for opening forms
-    openFormButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const listingId = button.getAttribute('data-listing-id');
-            const row = button.closest('.uba-table-row');
-            const landlordName = row.querySelector('div:first-child').textContent.split('(')[1].replace(')', '').trim();
-            openForm(listingId, landlordName);
-        });
-    });
 
     // Event listeners for closing forms
     closeFormButton.addEventListener('click', closeForm);
     cancelFormButton.addEventListener('click', closeForm);
+    
+    // Initial setup of listeners (for the mock data, will be re-run by renderPendingListings)
+    setupVerificationFormListeners();
 
     // Form submission
-    verificationForm.addEventListener('submit', (e) => {
+    verificationForm.addEventListener('submit', async (e) => { // IMPORTANT: Must be async
         e.preventDefault();
         
         const listingId = document.getElementById('uba-listing-id').value;
         const status = document.getElementById('uba-status').value;
         const notes = document.getElementById('uba-notes').value;
-
-        // Update the table row
-        const row = document.querySelector(`[data-listing-id="${listingId}"]`);
-        if (row) {
-            const statusElement = row.querySelector('.uba-status');
-            if (status === 'verified') {
-                statusElement.textContent = 'VERIFIED';
-                statusElement.className = 'uba-status uba-status-verified';
-            } else {
-                statusElement.textContent = 'REJECTED';
-                statusElement.className = 'uba-status uba-status-rejected';
-            }
+        
+        if (!status) {
+            alert("Please select a verification status (Verified or Rejected).");
+            return;
         }
 
-        // Show success message
-        alert(`Listing ${listingId} has been ${status === 'verified' ? 'verified' : 'rejected'} successfully!`);
+        // Disable form elements during submission
+        const submitBtn = verificationForm.querySelector('.uba-primary-btn');
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = 'Submitting...';
+        submitBtn.disabled = true;
+
+        // 1. Call the Supabase update function
+        const success = await updateListingVerificationStatus(listingId, status, notes);
         
-        // Close form
-        closeForm();
+        // 2. Handle the result
+        if (success) {
+            // Close form and show success
+            closeForm();
+            alert(`✅ Listing ${listingId} has been ${status} successfully!`);
+            
+            // 3. Reload the dashboard to update counts and queue table
+            const overviewData = await fetchOverviewData();
+            renderOverviewData(overviewData);
+            await loadVerificationQueue(); 
+
+        } else {
+             alert(`❌ Failed to update listing ${listingId}. Check console for errors.`);
+        }
+
+        // Re-enable button
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
     });
 }
 
@@ -317,6 +388,7 @@ function setupReportFilters() {
         const rows = verificationTable.getElementsByTagName('tr');
         let visibleCount = 0;
 
+        // Note: Starts at 1 to skip the <thead> row
         for (let i = 1; i < rows.length; i++) {
             const cells = rows[i].getElementsByTagName('td');
             const propertyName = cells[0].textContent.toLowerCase();
@@ -354,7 +426,9 @@ function setupReportFilters() {
         for (let i = 1; i < rows.length; i++) {
             const cells = rows[i].getElementsByTagName('td');
             const propertyName = cells[0].textContent.toLowerCase();
-            const rating = cells[1].textContent.match(/\d/)[0];
+            // Assuming rating is always the first character in the second cell, e.g., "⭐ 4.5"
+            const ratingMatch = cells[1].textContent.match(/\d/); 
+            const rating = ratingMatch ? ratingMatch[0] : null;
 
             const matchesSearch = propertyName.includes(searchTerm);
             const matchesRating = ratingFilter === 'all' || rating === ratingFilter;
@@ -392,7 +466,6 @@ document.addEventListener("DOMContentLoaded", async function() {
     // 2. Setup UI
     setupNavigation();
     setupQueueActions();
-    setupVerificationForm();
     setupReportFilters();
 
     // 3. Attach Logout Listener
@@ -400,8 +473,14 @@ document.addEventListener("DOMContentLoaded", async function() {
     if (logoutBtn) {
         logoutBtn.addEventListener('click', handleLogout);
     }
-
+    
     // 4. Fetch and Render Overview Data
-    const data = await fetchOverviewData();
-    renderOverviewData(data);
+    const overviewData = await fetchOverviewData();
+    renderOverviewData(overviewData);
+
+    // 5. Fetch and Render Verification Queue Data
+    await loadVerificationQueue();
+    
+    // 6. Setup the Verification Form handlers (MUST be called after loadVerificationQueue)
+    setupVerificationForm(); 
 });
