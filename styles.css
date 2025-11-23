@@ -1643,6 +1643,126 @@ input:checked + .slider:before {
     background-color: #bbb;
 }
 
+/* Shared form container styles - also applies to edit form */
+.landlord-module form {
+    background: var(--white);
+    padding: 2.5rem;
+    border-radius: 16px;
+    box-shadow: var(--shadow-light);
+    margin-top: 1.5rem;
+}
+
+/* Fieldset and Legend Styling for Add Listing Form */
+.landlord-module fieldset {
+    border: 1px solid rgba(125, 45, 145, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.landlord-module legend {
+    font-weight: 700;
+    color: var(--primary-color);
+    padding: 0 0.75rem;
+    font-size: 1.2rem;
+    margin-left: -0.75rem;
+}
+
+/* Grid Layout for Form Fields */
+.fieldset-content {
+    display: flex;
+    flex-direction: column; /* Default for smaller screens */
+    gap: 1.5rem;
+}
+
+.fieldset-content.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+}
+
+/* Form Group Styles (scoped for clarity) */
+.landlord-module .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.landlord-module .form-group label {
+    font-weight: 600;
+    color: var(--text-color-dash);
+    font-size: 0.95rem;
+    display: block; /* Ensure label takes full width */
+    margin-bottom: 0.25rem;
+}
+
+.landlord-module .form-group input,
+.landlord-module .form-group select,
+.landlord-module .form-group textarea {
+    padding: 0.9rem 1.25rem;
+    border-radius: 8px; /* Slightly smaller radius for form fields */
+    border: 1px solid #ddd;
+    font-size: 1rem;
+    font-family: inherit;
+    transition: all 0.3s;
+    background: #F9F9F9;
+    color: var(--text-color-dash);
+    width: 100%;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.landlord-module .form-group input:focus,
+.landlord-module .form-group select:focus,
+.landlord-module .form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    background: var(--white);
+    box-shadow: 0 0 0 3px rgba(125, 45, 145, 0.1);
+}
+
+.landlord-module .form-group textarea {
+    resize: vertical;
+}
+
+/* Specific styling for elements inside the grid */
+.fieldset-content .span-2 {
+    grid-column: 1 / -1; /* Make this element span all columns in the grid */
+}
+
+/* Photo upload specific styles */
+.file-input {
+    border: 2px dashed #ccc !important;
+    padding: 1.5rem 1.25rem !important;
+    background: #fff !important;
+    cursor: pointer;
+}
+
+.file-input:hover {
+    border-color: var(--primary-color) !important;
+}
+
+/* Button Group Styling */
+.button-group, .form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 2rem;
+}
+
+.button-group .btn-primary, .button-group .btn-secondary,
+.form-actions .btn-primary, .form-actions .btn-secondary {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+}
+
+/* Message Text Styling */
+.message-text {
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    /* Added to match the .message-text in the HTML for edit/add forms */
+}
 /* --- Listing Details Section --- */
 .detail-header {
     display: flex;
