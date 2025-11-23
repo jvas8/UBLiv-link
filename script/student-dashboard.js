@@ -95,7 +95,6 @@ async function fetchAndDisplayListings() {
     loadingSpinner.style.display = "flex";
     listingContainer.innerHTML = "";
 
-    console.log("Starting to fetch listings...");
 
     // Fetch listings (removed reviews(*) from the select)
     const { data: listings, error } = await supabase
@@ -120,7 +119,6 @@ async function fetchAndDisplayListings() {
         return;
     }
     
-    console.log("Fetched listings:", listings);
     
     if (listings.length === 0) {
         listingContainer.innerHTML = `<p class="info-message">No approved listings are currently available.</p>`;
@@ -178,7 +176,6 @@ async function fetchAndDisplayListings() {
         });
     }
 
-    console.log("Photos grouped by listing:", photosByListing);
 
     // Display all listings initially
     displayListingsWithPhotos(listings, photosByListing, reviewsByListing);
@@ -348,13 +345,9 @@ function displayListingsWithPhotos(listings, photosByListing, reviewsByListing =
     const listingContainer = document.getElementById("listing-container");
     listingContainer.innerHTML = "";
     
-    // DEBUG: Check what photos we're getting
-    console.log("Photos by listing:", photosByListing);
-    
     // Display each listing
     listings.forEach(listing => {
         const photos = photosByListing[listing.listing_id] || [];
-        console.log(`Listing ${listing.listing_id} has ${photos.length} photos:`, photos);
         
         listing.reviews = reviewsByListing[listing.listing_id] || [];
         
@@ -577,7 +570,6 @@ function initializeImageCarousels() {
             });
         }
 
-        console.log(`Initialized carousel with ${slides.length} slides`);
     });
 }
 
