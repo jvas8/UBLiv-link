@@ -337,8 +337,14 @@ function displayListingsWithPhotos(listings, photosByListing, reviewsByListing =
     const listingContainer = document.getElementById("listing-container");
     listingContainer.innerHTML = "";
     
+    // DEBUG: Check what photos we're getting
+    console.log("Photos by listing:", photosByListing);
+    
     // Display each listing
     listings.forEach(listing => {
+        const photos = photosByListing[listing.listing_id] || [];
+        console.log(`Listing ${listing.listing_id} has ${photos.length} photos:`, photos);
+        
         listing.reviews = reviewsByListing[listing.listing_id] || [];
         
         const avgRating = calculateAverageRating(listing.reviews);
@@ -353,7 +359,6 @@ function displayListingsWithPhotos(listings, photosByListing, reviewsByListing =
         }
         
         const landlordEmail = listing.landlord_id ? listing.landlord_id.email : 'contact@landlord.com';
-        const photos = photosByListing[listing.listing_id] || [];
 
         // Pass landlordEmail to createListingCard
         listingContainer.innerHTML += createListingCard(listing, propertyType, avgRating, landlordEmail, photos);
@@ -431,7 +436,7 @@ function createListingCard(listing, propertyType, avgRating, landlordEmail, phot
 }
 
 /**
- * Generate image carousel HTML
+ * Generate image carousel HTML (CORRECTED VERSION)
  */
 function generateImageCarousel(photos, listingName) {
     if (!photos || photos.length === 0) {
@@ -450,6 +455,7 @@ function generateImageCarousel(photos, listingName) {
         // Use the photo URL directly
         const photoUrl = photo.photo_url;
         
+        // CORRECTION: Generate ALL slides, not just one
         slidesHTML += `
             <div class="carousel-slide ${isActive}">
                 <img src="${photoUrl}" alt="Image ${index + 1} of ${listingName}" 
@@ -457,6 +463,7 @@ function generateImageCarousel(photos, listingName) {
             </div>
         `;
         
+        // CORRECTION: Generate ALL indicators
         indicatorsHTML += `
             <button class="carousel-indicator ${isActive}" 
                     data-slide-to="${index}"></button>
@@ -783,8 +790,6 @@ function openContactModal(event) {
     document.getElementById("contact-modal").style.display = "flex";
 }
 
-// student-dashboard.js - Replace your current handleContactSubmit function with this:
-
 async function handleContactSubmit(e) {
     e.preventDefault();
     
@@ -840,4 +845,3 @@ async function handleContactSubmit(e) {
         submitBtn.disabled = false;
     }
 }
-// (END NEW SECTION)
