@@ -186,6 +186,11 @@ async function fetchAndDisplayListings() {
 /**
  * Populate filter dropdowns with available options (MODIFIED: Removed Location and Restricted Property Types)
  */
+// student-dashboard.js - Corrected populateFilters function
+
+/**
+ * Populate filter dropdowns with available options 
+ */
 function populateFilters(listings) {
     const typeFilter = document.getElementById("type-filter");
     
@@ -205,9 +210,12 @@ function populateFilters(listings) {
                 ? listing.property_details[0]?.property_type 
                 : listing.property_details.property_type;
             
+            const lowerType = type ? type.toLowerCase() : null; // Normalize here
+            
             // Filter to include only allowed types (case-insensitive)
-            if (type && allowedPropertyTypes.includes(type.toLowerCase())) {
-                return type;
+            if (lowerType && allowedPropertyTypes.includes(lowerType)) {
+                // CRITICAL FIX: Return the normalized, lowercased string to the Set
+                return lowerType; 
             }
         }
         return null;
@@ -216,9 +224,13 @@ function populateFilters(listings) {
     // Populate property type filter
     propertyTypes.forEach(type => {
         const option = document.createElement("option");
-        // Ensure option value is lowercased for consistent filtering logic
+        
+        // 'type' is already lowercased and unique (e.g., 'single room')
+        option.value = type; 
+        
+        // For display: Capitalize the first letter of the first word (e.g., 'single room' -> 'Single room')
         const displayType = type.charAt(0).toUpperCase() + type.slice(1);
-        option.value = type.toLowerCase();
+        
         option.textContent = displayType;
         typeFilter.appendChild(option);
     });
@@ -227,6 +239,8 @@ function populateFilters(listings) {
     document.getElementById("apply-filters-btn").addEventListener("click", () => applyFilters());
     document.getElementById("search-box").addEventListener("input", () => applyFilters());
 }
+
+// ... rest of your student-dashboard.js file ...
 
 /**
  * Apply filters to listings (MODIFIED: Location filter removed)
