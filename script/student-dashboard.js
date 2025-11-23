@@ -109,6 +109,7 @@ async function fetchAndDisplayListings() {
             property_details(property_type, bedrooms, description)
         `)
         .eq("verification_status", "verified")
+        .eq("availability", true)
         .order("created_at", { ascending: false });
 
     loadingSpinner.style.display = "none";
