@@ -63,7 +63,7 @@ async function handleLogout() {
 
     if (error) {
         console.error('Error logging out:', error.message);
-        alert('Could not log out. Please try again.');
+        displayMessage('Could not log out. Please try again.', 'error');
     } else {
         // Redirect the user to the login page or homepage after successful logout
         console.log('Successfully logged out. Redirecting...');
@@ -79,6 +79,25 @@ function openListingForm() {
     const newListingMessage = document.getElementById('new-listing-message');
     if (newListingMessage) {
         newListingMessage.textContent = ''; // Clear previous messages
+        newListingMessage.className = 'message-text';
+        newListingMessage.style.display = 'none';
+    }
+}
+
+// Helper function to display messages
+function displayMessage(text, type, element = null) {
+    const messageElement = element || document.getElementById('new-listing-message');
+    if (!messageElement) return;
+    
+    messageElement.textContent = text;
+    messageElement.className = `message-text ${type}`;
+    messageElement.style.display = 'block';
+
+    // Auto-hide the message after 5 seconds if it's a success message
+    if (type === 'success') {
+        setTimeout(() => {
+            messageElement.style.display = 'none';
+        }, 5000);
     }
 }
 
@@ -87,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const navItems = document.querySelectorAll('.nav-item');
     const listingsNav = document.getElementById('listings-nav');
     const logoutBtn = document.getElementById('logout-btn');
-    const addListingBtn = document.getElementById('add-listing-btn'); // NEW: Add listing button
+    const addListingBtn = document.getElementById('add-listing-btn');
 
     // Containers for dynamic content
     const listingsTableContainer = document.getElementById('listings-table-container');
@@ -116,7 +135,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const newListingForm = document.getElementById('new-listing-form');
     const cancelNewListingBtn = document.getElementById('cancel-new-listing-btn');
     const newListingMessage = document.getElementById('new-listing-message');
-    // ---------------------------------
 
     // --- Event Listeners ---
     if (logoutBtn) {
@@ -396,7 +414,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (error) {
             console.error('Error fetching listing for edit:', error);
-            editMessage.textContent = 'Error loading listing data.';
+            displayMessage('Error loading listing data.', 'error', editMessage);
             return;
         }
 
@@ -414,12 +432,11 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         
         if (!currentListingID) {
-            editMessage.textContent = 'Error: No listing ID selected.';
+            displayMessage('Error: No listing ID selected.', 'error', editMessage);
             return;
         }
 
-        editMessage.textContent = 'Saving changes...';
-        editMessage.classList.remove('error', 'success');
+        displayMessage('Saving changes...', 'info', editMessage);
 
         const listingUpdateData = {
             name: editName.value, 
@@ -440,8 +457,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (listingError) {
             console.error('Error updating listing details:', listingError);
-            editMessage.textContent = `Error updating listing details: ${listingError.message}`;
-            editMessage.classList.add('error');
+            displayMessage(`Error updating listing details: ${listingError.message}`, 'error', editMessage);
             return;
         }
 
@@ -452,13 +468,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (detailsError) {
             console.error('Error updating property details:', detailsError);
-            editMessage.textContent = `Listing details updated, but error updating property specs: ${detailsError.message}`;
-            editMessage.classList.add('error');
+            displayMessage(`Listing details updated, but error updating property specs: ${detailsError.message}`, 'error', editMessage);
             return;
         }
         
-        editMessage.textContent = 'Listing updated successfully!';
-        editMessage.classList.add('success');
+        displayMessage('Listing updated successfully!', 'success', editMessage);
         
         setTimeout(() => {
             switchModule('listings');
@@ -476,10 +490,15 @@ document.addEventListener('DOMContentLoaded', () => {
         submitBtn.disabled = true;
         submitBtn.textContent = 'Publishing...';
         
+        // Clear previous messages
+        newListingMessage.textContent = '';
+        newListingMessage.className = 'message-text';
+        newListingMessage.style.display = 'none';
+
         // 1. Get Landlord ID
         const landlordId = await getCurrentLandlordId(); 
         if (!landlordId) {
-            alert('Authentication error: Landlord ID not found. Please log in again.');
+            displayMessage('Authentication error: Landlord ID not found. Please log in again.', 'error');
             submitBtn.disabled = false;
             submitBtn.textContent = 'Publish Listing';
             return;
@@ -578,26 +597,30 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (photoInsertError) {
                         // This is a critical warning, as images exist but links are missing from DB
                         console.warn('CRITICAL: Photo URL insertion into DB failed:', photoInsertError.message);
-                        alert('Warning: Listing added, but photo links failed to save to the database.');
+                        displayMessage('Listing added successfully, but photo links failed to save to the database.', 'warning');
                     }
                 }
             }
 
             // --- Final Success ---
             const photoMessage = photoRecords.length > 0 ? ` with ${photoRecords.length} photo(s) added.` : `. No photos were included.`;
-            alert(`Listing "${listingData.name}" submitted successfully for verification${photoMessage}`);
-            form.reset();
+            displayMessage(`Listing successfully published${photoMessage}`, 'success');
+            
+            // Reset the form fields
+            form.reset(); 
+
+            // Wait a moment and redirect to the listings view
+            setTimeout(() => {
+                switchModule('listings');
+                getLandlordListings(); // Refresh the listings to show the new one
+            }, 2000);
             
         } catch (error) {
             console.error('New Listing Submission Failed:', error);
-            alert(`Error during submission: ${error.message}`);
+            displayMessage(`Error during submission: ${error.message}`, 'error');
         } finally {
             submitBtn.disabled = false;
             submitBtn.textContent = 'Publish Listing';
-            
-            // Clean up and refresh UI
-            switchModule('listings'); 
-            getLandlordListings(); // Refresh the listings to show the new one
         }
     }
 
