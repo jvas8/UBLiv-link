@@ -184,47 +184,43 @@ async function fetchAndDisplayListings() {
 }
 
 /**
- * Populate filter dropdowns with available options
+ * Populate filter dropdowns with available options (MODIFIED: Removed Location and Restricted Property Types)
  */
 function populateFilters(listings) {
     const typeFilter = document.getElementById("type-filter");
-    const locationFilter = document.getElementById("location-filter");
     
-    // Clear existing options (keep "All Types" and "All Locations")
+    // Define the ONLY allowed property types (as requested)
+    const allowedPropertyTypes = ['apartment', 'house', 'single room', 'studio'];
+    
+    // Clear existing options (keep "All Types")
     while (typeFilter.children.length > 1) {
         typeFilter.removeChild(typeFilter.lastChild);
     }
-    while (locationFilter.children.length > 1) {
-        locationFilter.removeChild(locationFilter.lastChild);
-    }
     
-    // Get unique property types
+    // Get unique property types from data that match the allowed list
     const propertyTypes = [...new Set(listings.map(listing => {
         if (listing.property_details) {
-            return Array.isArray(listing.property_details) 
+            // Normalize data to a single type string
+            const type = Array.isArray(listing.property_details) 
                 ? listing.property_details[0]?.property_type 
                 : listing.property_details.property_type;
+            
+            // Filter to include only allowed types (case-insensitive)
+            if (type && allowedPropertyTypes.includes(type.toLowerCase())) {
+                return type;
+            }
         }
         return null;
-    }).filter(type => type && type !== 'N/A'))];
-    
-    // Get unique locations
-    const locations = [...new Set(listings.map(listing => listing.location).filter(location => location))];
+    }).filter(type => type))]; // Filter out nulls
     
     // Populate property type filter
     propertyTypes.forEach(type => {
         const option = document.createElement("option");
-        option.value = type;
-        option.textContent = type;
+        // Ensure option value is lowercased for consistent filtering logic
+        const displayType = type.charAt(0).toUpperCase() + type.slice(1);
+        option.value = type.toLowerCase();
+        option.textContent = displayType;
         typeFilter.appendChild(option);
-    });
-    
-    // Populate location filter
-    locations.forEach(location => {
-        const option = document.createElement("option");
-        option.value = location;
-        option.textContent = location;
-        locationFilter.appendChild(option);
     });
     
     // Add event listeners for filters
@@ -233,11 +229,10 @@ function populateFilters(listings) {
 }
 
 /**
- * Apply filters to listings
+ * Apply filters to listings (MODIFIED: Location filter removed)
  */
 function applyFilters() {
     const typeFilter = document.getElementById("type-filter").value;
-    const locationFilter = document.getElementById("location-filter").value;
     const priceFilter = document.getElementById("price-filter").value;
     const searchBox = document.getElementById("search-box").value.toLowerCase();
     
@@ -249,11 +244,12 @@ function applyFilters() {
                     ? listing.property_details[0]?.property_type 
                     : listing.property_details.property_type)
                 : 'N/A';
-            if (listingType !== typeFilter) return false;
+            
+            // Case-insensitive comparison
+            if (listingType.toLowerCase() !== typeFilter.toLowerCase()) return false;
         }
         
-        // Location filter
-        if (locationFilter && listing.location !== locationFilter) return false;
+        // Location filter check removed here
         
         // Price filter
         if (priceFilter) {
@@ -267,7 +263,7 @@ function applyFilters() {
         if (searchBox) {
             const searchText = searchBox.toLowerCase();
             const matchesName = listing.name.toLowerCase().includes(searchText);
-            const matchesLocation = listing.location.toLowerCase().includes(searchText);
+            const matchesLocation = listing.location.toLowerCase().includes(searchText); // Keep location search in general search
             const matchesDescription = listing.property_details?.description?.toLowerCase().includes(searchText);
             
             if (!matchesName && !matchesLocation && !matchesDescription) return false;
@@ -735,7 +731,7 @@ function updateListingCardRating(listingId, reviews) {
 }
 
 /**
- * CONTACT FORM LOGIC (NEW SECTION: REQUIRED TO CALL YOUR EDGE FUNCTION)
+ * CONTACT FORM LOGIC (MODIFIED: Added logic to hide date field)
  */
 function setupContactFormSteps() {
     const contactModal = document.getElementById("contact-modal");
@@ -743,8 +739,24 @@ function setupContactFormSteps() {
     const prevBtn = document.getElementById("contact-prev-btn");
     const formSteps = contactModal.querySelectorAll(".form-step");
     const steps = contactModal.querySelectorAll(".step");
+    const dateInputGroup = document.getElementById("date-input-group"); // Target the date group
     let currentStep = 0;
 
+    const updateDateVisibility = () => {
+        const requestType = contactModal.querySelector('input[name="requestType"]:checked')?.value;
+        // Hide date field if "General Inquiry" is selected
+        if (requestType === 'general_query') {
+            dateInputGroup.style.display = 'none';
+        } else {
+            dateInputGroup.style.display = 'block';
+        }
+    };
+
+    // Listen for changes in the request type radio buttons
+    contactModal.querySelectorAll('input[name="requestType"]').forEach(radio => {
+        radio.addEventListener('change', updateDateVisibility);
+    });
+    
     const updateFormDisplay = () => {
         formSteps.forEach((step, index) => {
             step.classList.toggle("active", index === currentStep);
@@ -752,6 +764,11 @@ function setupContactFormSteps() {
         steps.forEach((step, index) => {
             step.classList.toggle("active", index <= currentStep);
         });
+        
+        if (currentStep === 0) {
+            // On step 1, ensure date visibility is correctly set
+            updateDateVisibility();
+        }
     };
     
     updateFormDisplay(); // Initialize to Step 1
@@ -764,6 +781,7 @@ function setupContactFormSteps() {
             return;
         }
 
+        // On step 2, if the user moves to it, the date field will be shown/hidden by updateDateVisibility on step 1 change
         if (currentStep < formSteps.length - 1) {
             currentStep++;
             updateFormDisplay();
@@ -805,6 +823,11 @@ function openContactModal(event) {
     contactForm.querySelector('.form-step[data-step="2"]').classList.remove('active');
     document.getElementById("contact-progress-bar").querySelector('.step[data-step="1"]').classList.add('active');
     document.getElementById("contact-progress-bar").querySelector('.step[data-step="2"]').classList.remove('active');
+
+    // Manually hide date field if the default selection (or no selection) is 'general_query' on open
+    const dateInputGroup = document.getElementById("date-input-group");
+    // Ensure the date field is visible by default when opening the modal (since the first option is Schedule a Visit)
+    dateInputGroup.style.display = 'block'; 
 
     // Show modal
     document.getElementById("contact-modal").style.display = "flex";
