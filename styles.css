@@ -1756,6 +1756,7 @@ input:checked + .slider:before {
 }
 
 /* Message Text Styling */
+/* Message Text Styling */
 .message-text {
     padding: 1rem;
     border-radius: 8px;
@@ -1763,16 +1764,20 @@ input:checked + .slider:before {
     font-weight: 600;
     /* Added to match the .message-text in the HTML for edit/add forms */
 }
+
+/* --- Added for clear success/error visual feedback --- */
 .message-text.success {
     background-color: #d4edda; /* Light green */
     color: #155724; /* Dark green text */
     border: 1px solid #c3e6cb;
+    display: block; 
 }
 
 .message-text.error {
     background-color: #f8d7da; /* Light red/pink */
     color: #721c24; /* Dark red text */
     border: 1px solid #f5c6cb;
+    display: block; 
 }
 /* --- Listing Details Section --- */
 .detail-header {
