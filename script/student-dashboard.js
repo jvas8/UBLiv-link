@@ -487,7 +487,7 @@ function generateImageCarousel(photos, listingName) {
 }
 
 /**
- * Initialize all image carousels
+ * Initialize all image carousels (FIXED VERSION)
  */
 function initializeImageCarousels() {
     document.querySelectorAll('.image-carousel').forEach(carousel => {
@@ -499,33 +499,51 @@ function initializeImageCarousels() {
         
         let currentSlide = 0;
 
-        // Set initial position
-        track.style.transform = `translateX(-${currentSlide * 100}%)`;
+        // FIX: Use display flex for track and slides
+        track.style.display = 'flex';
+        track.style.transition = 'transform 0.5s ease-in-out';
+        
+        // Set initial position - show first slide
+        updateCarousel();
+
+        function updateCarousel() {
+            // Move the track to show the current slide
+            track.style.transform = `translateX(-${currentSlide * 100}%)`;
+            
+            // Update active states for slides
+            slides.forEach((slide, i) => {
+                slide.classList.toggle('active', i === currentSlide);
+            });
+            
+            // Update active states for indicators
+            indicators.forEach((indicator, i) => {
+                indicator.classList.toggle('active', i === currentSlide);
+            });
+        }
 
         function goToSlide(index) {
             if (index < 0) index = slides.length - 1;
             if (index >= slides.length) index = 0;
             
             currentSlide = index;
-            track.style.transform = `translateX(-${currentSlide * 100}%)`;
-            
-            // Update active states
-            slides.forEach((slide, i) => {
-                slide.classList.toggle('active', i === currentSlide);
-            });
-            
-            indicators.forEach((indicator, i) => {
-                indicator.classList.toggle('active', i === currentSlide);
-            });
+            updateCarousel();
+        }
+
+        function nextSlide() {
+            goToSlide(currentSlide + 1);
+        }
+
+        function prevSlide() {
+            goToSlide(currentSlide - 1);
         }
 
         // Navigation buttons
         if (prevBtn) {
-            prevBtn.addEventListener('click', () => goToSlide(currentSlide - 1));
+            prevBtn.addEventListener('click', prevSlide);
         }
         
         if (nextBtn) {
-            nextBtn.addEventListener('click', () => goToSlide(currentSlide + 1));
+            nextBtn.addEventListener('click', nextSlide);
         }
 
         // Indicators
@@ -536,17 +554,19 @@ function initializeImageCarousels() {
         // Auto-advance (optional)
         if (slides.length > 1) {
             let slideInterval = setInterval(() => {
-                goToSlide(currentSlide + 1);
+                nextSlide();
             }, 5000);
 
             // Pause on hover
             carousel.addEventListener('mouseenter', () => clearInterval(slideInterval));
             carousel.addEventListener('mouseleave', () => {
                 slideInterval = setInterval(() => {
-                    goToSlide(currentSlide + 1);
+                    nextSlide();
                 }, 5000);
             });
         }
+
+        console.log(`Initialized carousel with ${slides.length} slides`);
     });
 }
 
