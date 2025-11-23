@@ -790,37 +790,40 @@ body {
     padding: 1.5rem;
   }
 }
-/* ===== IMAGE CAROUSEL STYLES ===== */
+/* ===== IMAGE CAROUSEL STYLES (FIXED) ===== */
 .image-carousel {
     position: relative;
     width: 100%;
     height: 220px;
-    overflow: hidden;
+    overflow: hidden; /* CRITICAL: Hides slides outside the viewport */
     border-radius: 0;
 }
 
 .carousel-container {
     width: 100%;
     height: 100%;
-    overflow: hidden;
+    /* Keep overflow: hidden here too, but it's redundant if set on .image-carousel */
+    overflow: hidden; 
     position: relative;
 }
 
 .carousel-track {
-    display: flex;
+    display: flex; /* CRITICAL: Puts all slides side-by-side */
     transition: transform 0.5s ease-in-out;
     height: 100%;
+    /* The transform style is applied by the JS */
 }
 
 .carousel-slide {
-    min-width: 100%;
+    /* CRITICAL FIX: The slide must ALWAYS take 100% width to enable sliding */
+    min-width: 100%; 
     height: 100%;
-    display: none;
+    /* FIX: Remove 'display: none'. This was preventing subsequent images from appearing */
+    /* display: none; */ 
 }
 
-.carousel-slide.active {
-    display: block;
-}
+/* FIX: This rule is now removed as the JS manages slide visibility via transform */
+/* .carousel-slide.active { display: block; } */ 
 
 .carousel-slide img {
     width: 100%;
