@@ -66,7 +66,9 @@ document.addEventListener("DOMContentLoaded", function() {
                     email: regEmail,
                     password: regPassword,
                     options: {
-                        data: { full_name: fullname } // Metadata for Supabase user object
+                        data: { full_name: fullname },
+                         // Metadata for Supabase user object
+                         emailRedirectTo: window.location.origin + '/auth.html'
                     }
                 });
 
