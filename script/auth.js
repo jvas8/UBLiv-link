@@ -8,15 +8,17 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 document.addEventListener("DOMContentLoaded", function() {
     console.log("Auth script loaded successfully");
     
-    // Tabs
+    // Elements
     const loginTab = document.getElementById("loginTab");
     const registerTab = document.getElementById("registerTab");
     const loginForm = document.getElementById("loginForm");
     const registerForm = document.getElementById("registerForm");
     const switchToRegister = document.getElementById("switchToRegister");
     const switchToLogin = document.getElementById("switchToLogin");
+    const loginMsg = document.getElementById("loginMsg");
+    const regMsg = document.getElementById("regMsg");
 
-    // Tab switching functionality
+    // --- TAB SWITCHING ---
     function showLogin() {
         loginForm.classList.add("active");
         registerForm.classList.remove("active");
@@ -31,50 +33,40 @@ document.addEventListener("DOMContentLoaded", function() {
         loginTab.classList.remove("active");
     }
 
-    // Event listeners for tab switching
     if (loginTab) loginTab.addEventListener("click", showLogin);
     if (registerTab) registerTab.addEventListener("click", showRegister);
-    if (switchToRegister) switchToRegister.addEventListener("click", (e) => { e.preventDefault(); showRegister(); });
-    if (switchToLogin) switchToLogin.addEventListener("click", (e) => { e.preventDefault(); showLogin(); });
+    if (switchToRegister) switchToRegister.addEventListener("click", showRegister);
+    if (switchToLogin) switchToLogin.addEventListener("click", showLogin);
 
-    // Message elements
-    const loginMsg = document.getElementById("loginMsg") || createMessageElement(loginForm);
-    const regMsg = document.getElementById("regMsg") || createMessageElement(registerForm);
+    // Helper: Show Messages
+    function showMessage(element, message, type) {
+        element.textContent = message;
+        element.className = `msg ${type}`; // Ensure your CSS has .error and .success classes
+    }
 
-    // ----------------------
-    // REGISTER FUNCTIONALITY
-    // ----------------------
+    // --- REGISTER FUNCTIONALITY ---
     if (registerForm) {
         registerForm.addEventListener("submit", async (e) => {
             e.preventDefault();
-            
-            const fullName = document.getElementById("fullname").value;
-            const email = document.getElementById("regEmail").value;
-            const password = document.getElementById("regPassword").value;
+            const fullname = document.getElementById("fullname").value;
+            const regEmail = document.getElementById("regEmail").value;
+            const regPassword = document.getElementById("regPassword").value;
             const confirmPassword = document.getElementById("confirmPassword").value;
 
-            // Validation
-            if (password !== confirmPassword) {
+            showMessage(regMsg, "Creating account...", "loading");
+
+            if (regPassword !== confirmPassword) {
                 showMessage(regMsg, "Passwords do not match.", "error");
                 return;
             }
 
-            if (password.length < 6) {
-                showMessage(regMsg, "Password must be at least 6 characters long.", "error");
-                return;
-            }
-
-            showMessage(regMsg, "Creating account...", "loading");
-
             try {
-                // Create user in Supabase Auth
+                // 1. Sign up with Supabase Auth
                 const { data: authData, error: authError } = await supabase.auth.signUp({
-                    email: email,
-                    password: password,
+                    email: regEmail,
+                    password: regPassword,
                     options: {
-                        data: {
-                            full_name: fullName
-                        }
+                        data: { full_name: fullname } // Metadata for Supabase user object
                     }
                 });
 
@@ -83,168 +75,134 @@ document.addEventListener("DOMContentLoaded", function() {
                     return;
                 }
 
-                // Determine role based on email domain
-                let role = "landlord"; // default
-                if (email.endsWith("@ub.edu.bz")) {
-                    role = "student";
-                }
-                // Add specific admin email checks
-                if (email === "admin@ublivlink.ub.edu.bz" || email === "housing@ub.edu.bz") {
-                    role = "admin";
-                }
-
-                // Insert user into USERS table
-                const { error: userError } = await supabase
+                // 2. Insert into PUBLIC.USERS table
+                // We do NOT store the password here. Security best practice.
+                // We DO store auth_id to link the tables.
+                const { error: dbError } = await supabase
                     .from("users")
                     .insert([
                         {
-                            name: fullName,
-                            email: email,
-                            password: password,
-                            role: role,
-                            auth_id: authData.user?.id
+                            auth_id: authData.user.id, // Linking Auth ID
+                            name: fullname,
+                            email: regEmail,
+                            role: 'student' // Default role
                         }
                     ]);
 
-                if (userError) {
-                    console.error("User creation error:", userError);
-                    showMessage(regMsg, "Error creating user profile: " + userError.message, "error");
+                if (dbError) {
+                    console.error("Database Insert Error:", dbError);
+                    // Optional: Delete the auth user if the db insert fails to keep data clean
+                    showMessage(regMsg, "Account created in Auth but failed to save profile. Please contact support.", "error");
                     return;
                 }
 
-                showMessage(regMsg, "Account created successfully! Please check your email to verify your account.", "success");
-                
-                // Clear form
+                showMessage(regMsg, "Success! Please check your email to verify your account.", "success");
                 registerForm.reset();
-                
-                // Switch to login after successful registration
-                setTimeout(() => {
-                    showLogin();
-                }, 3000);
 
-            } catch (error) {
-                console.error("Registration error:", error);
-                showMessage(regMsg, "An unexpected error occurred: " + error.message, "error");
+            } catch (err) {
+                console.error("Unexpected Error:", err);
+                showMessage(regMsg, "An unexpected error occurred.", "error");
             }
         });
     }
 
-    // ----------------------
-    // LOGIN FUNCTIONALITY - FIXED FILE PATHS
-    // ----------------------
+    // --- LOGIN FUNCTIONALITY ---
     if (loginForm) {
         loginForm.addEventListener("submit", async (e) => {
             e.preventDefault();
-            
             const email = document.getElementById("email").value;
             const password = document.getElementById("password").value;
 
-            showMessage(loginMsg, "Signing in...", "loading");
+            showMessage(loginMsg, "Verifying credentials...", "loading");
 
             try {
-                // FIRST: Check if user exists in USERS table and password matches
-                const { data: userData, error: userError } = await supabase
-                    .from("users")
-                    .select("*")
-                    .eq("email", email)
-                    .single();
-
-                console.log("User data:", userData, "Error:", userError);
-
-                if (userError || !userData) {
-                    showMessage(loginMsg, "Invalid email or password.", "error");
-                    return;
-                }
-
-                // Check password
-                if (userData.password !== password) {
-                    showMessage(loginMsg, "Invalid email or password.", "error");
-                    return;
-                }
-
-                // If password matches, sign in with Supabase Auth
-                const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                // 1. Authenticate with Supabase
+                const { data, error } = await supabase.auth.signInWithPassword({
                     email: email,
                     password: password
                 });
 
-                if (authError) {
-                    console.warn("Supabase auth error, but USERS table login successful:", authError);
-                    // Continue with redirect since USERS table authentication passed
+                if (error) {
+                    showMessage(loginMsg, "Invalid email or password.", "error");
+                    return;
+                }
+
+                // 2. CHECK EMAIL VERIFICATION [The Fix]
+                // If email_confirmed_at is null, they haven't clicked the link.
+                if (!data.user.email_confirmed_at) {
+                    await supabase.auth.signOut(); // Kick them out immediately
+                    showMessage(loginMsg, "Please verify your email address before logging in.", "error");
+                    return;
                 }
 
                 showMessage(loginMsg, "Login successful! Redirecting...", "success");
 
-                // Redirect based on user role - FIXED FILE PATHS
-                setTimeout(() => {
-                    console.log("Redirecting user with role:", userData.role);
-                    if (userData.role === "admin") {
-                        window.location.href = "admin-dashboard.html";
-                    } else if (userData.role === "student") {
-                        window.location.href = "student-dashboard.html";
-                    } else if (userData.role === "landlord") {
-                        // FIXED: This was pointing to wrong file name
-                        window.location.href = "landlordDASH.html";
-                    } else {
-                        // Default fallback
-                        window.location.href = "student-dashboard.html";
-                    }
-                }, 1500);
+                // 3. Get User Role from 'users' table using auth_id
+                const { data: userData, error: userError } = await supabase
+                    .from("users")
+                    .select("role")
+                    .eq("auth_id", data.user.id) // Secure lookup using auth_id
+                    .single();
 
-            } catch (error) {
-                console.error("Login error:", error);
-                showMessage(loginMsg, "An unexpected error occurred: " + error.message, "error");
+                if (userError || !userData) {
+                    console.error("User Profile Error:", userError);
+                    showMessage(loginMsg, "Profile not found. Please contact support.", "error");
+                    await supabase.auth.signOut();
+                    return;
+                }
+
+                // 4. Redirect based on role
+                redirectUser(userData.role);
+
+            } catch (err) {
+                console.error("Login Error:", err);
+                showMessage(loginMsg, "An unexpected error occurred.", "error");
             }
         });
     }
 
-    // Helper function to show messages
-    function showMessage(element, message, type) {
-        if (!element) return;
-        
-        element.textContent = message;
-        element.style.color = type === "error" ? "red" : 
-                            type === "success" ? "green" : 
-                            "#7D2D91";
-    }
-
-    // Helper function to create message element if it doesn't exist
-    function createMessageElement(form) {
-        const msgElement = document.createElement("p");
-        msgElement.className = "msg";
-        form.appendChild(msgElement);
-        return msgElement;
-    }
-
-    // Check if user is already logged in - FIXED FILE PATHS
+    // --- AUTO-LOGIN CHECK (On Page Load) ---
     checkAuthState();
 
     async function checkAuthState() {
+        // Get current session
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session) {
-            // User is already logged in, redirect to appropriate dashboard
+            // 1. Verify Email Status for existing session
+            if (!session.user.email_confirmed_at) {
+                console.log("User has session but email not verified. Signing out.");
+                await supabase.auth.signOut();
+                return; // Stay on auth page
+            }
+
+            // 2. Fetch Role and Redirect
             try {
                 const { data: userData } = await supabase
                     .from("users")
                     .select("role")
-                    .eq("email", session.user.email)
+                    .eq("auth_id", session.user.id)
                     .single();
 
                 if (userData) {
-                    console.log("User already logged in, redirecting to dashboard...");
-                    if (userData.role === "admin") {
-                        window.location.href = "admin-dashboard.html";
-                    } else if (userData.role === "student") {
-                        window.location.href = "student-dashboard.html";
-                    } else if (userData.role === "landlord") {
-                        // FIXED: This was pointing to wrong file name
-                        window.location.href = "landlordDASH.html";
-                    }
+                    redirectUser(userData.role);
                 }
             } catch (error) {
-                console.error("Error checking auth state:", error);
+                console.error("Auth State Check Error:", error);
             }
+        }
+    }
+
+    // Helper: Centralized Redirect Logic
+    function redirectUser(role) {
+        if (role === "admin") {
+            window.location.href = "admin-dashboard.html";
+        } else if (role === "student") {
+            window.location.href = "student-dashboard.html";
+        } else if (role === "landlord") {
+            window.location.href = "landlordDASH.html";
+        } else {
+            window.location.href = "student-dashboard.html"; // Fallback
         }
     }
 });
