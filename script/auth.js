@@ -1,4 +1,5 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+import { use } from "react";
 
 const supabaseUrl = "https://dquslrxlpmrersnjybym.supabase.co";
 const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxdXNscnhscG1yZXJzbmp5YnltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxNDg4NTYsImV4cCI6MjA3ODcyNDg1Nn0.ICkT2aVP_Ngr3Z24V2b9WLUxvcM-e6B84WkATqt94a8";
@@ -76,6 +77,13 @@ document.addEventListener("DOMContentLoaded", function() {
                     showMessage(regMsg, authError.message, "error");
                     return;
                 }
+                // --- NEW LOGIC START ---
+                // Check if email ends with @ub.edu.bz
+                const isStudentEmail = regEmail.trim().toLowerCase().endsWith("@ub.edu.bz");
+                
+                // Assign role based on domain
+                const userRole = isStudentEmail ? 'student' : 'landlord';
+        // --- NEW LOGIC END ---
 
                 // 2. Insert into PUBLIC.USERS table
                 // We do NOT store the password here. Security best practice.
@@ -87,7 +95,7 @@ document.addEventListener("DOMContentLoaded", function() {
                             auth_id: authData.user.id, // Linking Auth ID
                             name: fullname,
                             email: regEmail,
-                            role: 'student' // Default role
+                            role: userRole // Default role
                         }
                     ]);
 
