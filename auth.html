@@ -1,64 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>UBLiv' Link | Login / Register</title>
-  <link rel="stylesheet" href="styles.css">
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-  <!-- Add this line to prevent favicon error -->
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏠</text></svg>">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verifying Email - UBLiv' Link</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const supabaseUrl = "https://dquslrxlpmrersnjybym.supabase.co";
+        const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxdXNscnhscG1yZXJzbmp5YnltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxNDg4NTYsImV4cCI6MjA3ODcyNDg1Nn0.ICkT2aVP_Ngr3Z24V2b9WLUxvcM-e6B84WkATqt94a8";
+        
+        const supabase = supabase.createClient(supabaseUrl, supabaseAnonKey);
+        
+        async function handleAuthCallback() {
+            try {
+                const { data: { session }, error } = await supabase.auth.getSession();
+                
+                if (error) {
+                    console.error('Error getting session:', error);
+                    window.location.href = 'auth.html';
+                    return;
+                }
+                
+                if (session) {
+                    // Get user role and redirect accordingly
+                    const { data: userData, error: userError } = await supabase
+                        .from("users")
+                        .select("role")
+                        .eq("auth_id", session.user.id)
+                        .single();
+                    
+                    if (userError) {
+                        console.error('Error fetching user data:', userError);
+                        window.location.href = 'auth.html';
+                        return;
+                    }
+                    
+                    if (userData) {
+                        if (userData.role === "admin") {
+                            window.location.href = "admin-dashboard.html";
+                        } else if (userData.role === "student") {
+                            window.location.href = "student-dashboard.html";
+                        } else if (userData.role === "landlord") {
+                            window.location.href = "landlordDASH.html";
+                        } else {
+                            window.location.href = "student-dashboard.html";
+                        }
+                    } else {
+                        window.location.href = 'auth.html';
+                    }
+                } else {
+                    window.location.href = 'auth.html';
+                }
+            } catch (err) {
+                console.error('Unexpected error:', err);
+                window.location.href = 'auth.html';
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', handleAuthCallback);
+    </script>
 </head>
-<body class="auth-page">
-
-  <div class="container">
-    <div class="logo"><span>UB</span>Liv' Link</div>
-
-    <div class="tab-container">
-      <div class="tab active" id="loginTab">Login</div>
-      <div class="tab" id="registerTab">Register</div>
+<body>
+    <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;">
+        <h2>Verifying your email...</h2>
+        <p>Please wait while we redirect you to your dashboard.</p>
     </div>
-
-    <!-- LOGIN FORM -->
-    <form id="loginForm" class="active">
-      <label for="email">Email</label>
-      <input type="email" id="email" placeholder="Enter your email" required>
-
-      <label for="password">Password</label>
-      <input type="password" id="password" placeholder="Enter your password" required>
-
-      <button type="submit" class="btn">Login</button>
-
-      <!-- Message element for login -->
-      <p id="loginMsg" class="msg"></p>
-
-      <div class="note">Don't have an account? <a href="#" id="switchToRegister">Register here</a></div>
-    </form>
-
-    <!-- REGISTRATION FORM -->
-    <form id="registerForm">
-      <label for="fullname">Full Name</label>
-      <input type="text" id="fullname" placeholder="Enter your full name" required>
-
-      <label for="regEmail">Email</label>
-      <input type="email" id="regEmail" placeholder="Enter your email" required>
-
-      <label for="regPassword">Password</label>
-      <input type="password" id="regPassword" placeholder="Create a password (min. 6 characters)" required>
-
-      <label for="confirmPassword">Confirm Password</label>
-      <input type="password" id="confirmPassword" placeholder="Confirm your password" required>
-
-      <button type="submit" class="btn">Create Account</button>
-
-      <!-- Message element for registration -->
-      <p id="regMsg" class="msg"></p>
-
-      <div class="note">Already have an account? <a href="#" id="switchToLogin">Login here</a></div>
-    </form>
-  </div>
-
-  <!-- Supabase Auth JS -->
-  <script type="module" src="./script/auth.js"></script>
 </body>
 </html>

@@ -42,7 +42,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const regMsg = document.getElementById("regMsg") || createMessageElement(registerForm);
 
     // ----------------------
-    // REGISTER FUNCTIONALITY
+    // REGISTER FUNCTIONALITY - REMOVED PASSWORD STORAGE
     // ----------------------
     if (registerForm) {
         registerForm.addEventListener("submit", async (e) => {
@@ -74,7 +74,8 @@ document.addEventListener("DOMContentLoaded", function() {
                     options: {
                         data: {
                             full_name: fullName
-                        }
+                        },
+                        emailRedirectTo: `${window.location.origin}/auth-callback.html`
                     }
                 });
 
@@ -93,16 +94,16 @@ document.addEventListener("DOMContentLoaded", function() {
                     role = "admin";
                 }
 
-                // Insert user into USERS table
+                // Insert user into USERS table WITHOUT PASSWORD - using auth_id only
                 const { error: userError } = await supabase
                     .from("users")
                     .insert([
                         {
                             name: fullName,
                             email: email,
-                            password: password,
                             role: role,
                             auth_id: authData.user?.id
+                            // PASSWORD FIELD REMOVED - handled by Supabase Auth
                         }
                     ]);
 
@@ -130,7 +131,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     // ----------------------
-    // LOGIN FUNCTIONALITY - FIXED FILE PATHS
+    // LOGIN FUNCTIONALITY - FIXED AUTHENTICATION FLOW
     // ----------------------
     if (loginForm) {
         loginForm.addEventListener("submit", async (e) => {
@@ -142,35 +143,37 @@ document.addEventListener("DOMContentLoaded", function() {
             showMessage(loginMsg, "Signing in...", "loading");
 
             try {
-                // FIRST: Check if user exists in USERS table and password matches
-                const { data: userData, error: userError } = await supabase
-                    .from("users")
-                    .select("*")
-                    .eq("email", email)
-                    .single();
-
-                console.log("User data:", userData, "Error:", userError);
-
-                if (userError || !userData) {
-                    showMessage(loginMsg, "Invalid email or password.", "error");
-                    return;
-                }
-
-                // Check password
-                if (userData.password !== password) {
-                    showMessage(loginMsg, "Invalid email or password.", "error");
-                    return;
-                }
-
-                // If password matches, sign in with Supabase Auth
+                // STEP 1: Sign in with Supabase Auth (handles password verification)
                 const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
                     email: email,
                     password: password
                 });
 
                 if (authError) {
-                    console.warn("Supabase auth error, but USERS table login successful:", authError);
-                    // Continue with redirect since USERS table authentication passed
+                    showMessage(loginMsg, authError.message, "error");
+                    return;
+                }
+
+                // Check if email is verified
+                if (!authData.user?.email_confirmed_at && !authData.user?.confirmed_at) {
+                    showMessage(loginMsg, "Please verify your email before logging in.", "error");
+                    await supabase.auth.signOut();
+                    return;
+                }
+
+                // STEP 2: Get user role from USERS table using auth_id
+                const authId = authData.user.id;
+                const { data: userData, error: userError } = await supabase
+                    .from("users")
+                    .select("role")
+                    .eq("auth_id", authId)
+                    .single();
+
+                if (userError || !userData) {
+                    // Log out the user from Supabase if their profile is missing
+                    await supabase.auth.signOut();
+                    showMessage(loginMsg, "User profile not found. Please register.", "error");
+                    return;
                 }
 
                 showMessage(loginMsg, "Login successful! Redirecting...", "success");
@@ -183,7 +186,6 @@ document.addEventListener("DOMContentLoaded", function() {
                     } else if (userData.role === "student") {
                         window.location.href = "student-dashboard.html";
                     } else if (userData.role === "landlord") {
-                        // FIXED: This was pointing to wrong file name
                         window.location.href = "landlordDASH.html";
                     } else {
                         // Default fallback
@@ -228,7 +230,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 const { data: userData } = await supabase
                     .from("users")
                     .select("role")
-                    .eq("email", session.user.email)
+                    .eq("auth_id", session.user.id)
                     .single();
 
                 if (userData) {
@@ -238,7 +240,6 @@ document.addEventListener("DOMContentLoaded", function() {
                     } else if (userData.role === "student") {
                         window.location.href = "student-dashboard.html";
                     } else if (userData.role === "landlord") {
-                        // FIXED: This was pointing to wrong file name
                         window.location.href = "landlordDASH.html";
                     }
                 }
