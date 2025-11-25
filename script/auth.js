@@ -5,9 +5,66 @@ const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+// Function to handle email verification redirects
+async function handleEmailVerification() {
+    try {
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+            console.error('Error getting session:', error);
+            window.location.href = 'auth.html';
+            return;
+        }
+        
+        if (data.session) {
+            // User is authenticated, get their role and redirect
+            const { data: userData, error: userError } = await supabase
+                .from("users")
+                .select("role")
+                .eq("auth_id", data.session.user.id)
+                .single();
+
+            if (userError) {
+                console.error('Error fetching user data:', userError);
+                window.location.href = 'auth.html';
+                return;
+            }
+
+            if (userData) {
+                console.log("Email verified! Redirecting user with role:", userData.role);
+                if (userData.role === "admin") {
+                    window.location.href = "admin-dashboard.html";
+                } else if (userData.role === "student") {
+                    window.location.href = "student-dashboard.html";
+                } else if (userData.role === "landlord") {
+                    window.location.href = "landlordDASH.html";
+                } else {
+                    window.location.href = "student-dashboard.html";
+                }
+            } else {
+                window.location.href = 'auth.html';
+            }
+        } else {
+            window.location.href = 'auth.html';
+        }
+    } catch (err) {
+        console.error('Unexpected error in email verification:', err);
+        window.location.href = 'auth.html';
+    }
+}
+
 document.addEventListener("DOMContentLoaded", function() {
     console.log("Auth script loaded successfully");
     
+    // Check if we're on the email verification callback page
+    if (window.location.pathname.includes('auth-callback.html') || 
+        document.title.includes('Verifying Email')) {
+        console.log("Handling email verification callback...");
+        handleEmailVerification();
+        return; // Stop further execution for callback page
+    }
+    
+    // Regular authentication page functionality
     // Tabs
     const loginTab = document.getElementById("loginTab");
     const registerTab = document.getElementById("registerTab");

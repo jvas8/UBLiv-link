@@ -4,66 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Verifying Email - UBLiv' Link</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        const supabaseUrl = "https://dquslrxlpmrersnjybym.supabase.co";
-        const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxdXNscnhscG1yZXJzbmp5YnltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxNDg4NTYsImV4cCI6MjA3ODcyNDg1Nn0.ICkT2aVP_Ngr3Z24V2b9WLUxvcM-e6B84WkATqt94a8";
-        
-        const supabase = supabase.createClient(supabaseUrl, supabaseAnonKey);
-        
-        async function handleAuthCallback() {
-            try {
-                const { data: { session }, error } = await supabase.auth.getSession();
-                
-                if (error) {
-                    console.error('Error getting session:', error);
-                    window.location.href = 'auth.html';
-                    return;
-                }
-                
-                if (session) {
-                    // Get user role and redirect accordingly
-                    const { data: userData, error: userError } = await supabase
-                        .from("users")
-                        .select("role")
-                        .eq("auth_id", session.user.id)
-                        .single();
-                    
-                    if (userError) {
-                        console.error('Error fetching user data:', userError);
-                        window.location.href = 'auth.html';
-                        return;
-                    }
-                    
-                    if (userData) {
-                        if (userData.role === "admin") {
-                            window.location.href = "admin-dashboard.html";
-                        } else if (userData.role === "student") {
-                            window.location.href = "student-dashboard.html";
-                        } else if (userData.role === "landlord") {
-                            window.location.href = "landlordDASH.html";
-                        } else {
-                            window.location.href = "student-dashboard.html";
-                        }
-                    } else {
-                        window.location.href = 'auth.html';
-                    }
-                } else {
-                    window.location.href = 'auth.html';
-                }
-            } catch (err) {
-                console.error('Unexpected error:', err);
-                window.location.href = 'auth.html';
-            }
-        }
-        
-        document.addEventListener('DOMContentLoaded', handleAuthCallback);
-    </script>
+    <script type="module" src="script/auth.js"></script>
 </head>
 <body>
     <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;">
         <h2>Verifying your email...</h2>
         <p>Please wait while we redirect you to your dashboard.</p>
+        <div style="margin-top: 20px;">
+            <div style="display: inline-block; width: 50px; height: 50px; border: 3px solid #f3f3f3; border-top: 3px solid #7D2D91; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+        </div>
     </div>
+
+    <style>
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </body>
 </html>
