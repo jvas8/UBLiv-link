@@ -5,66 +5,9 @@ const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-// Function to handle email verification redirects
-async function handleEmailVerification() {
-    try {
-        const { data, error } = await supabase.auth.getSession();
-        
-        if (error) {
-            console.error('Error getting session:', error);
-            window.location.href = 'auth.html';
-            return;
-        }
-        
-        if (data.session) {
-            // User is authenticated, get their role and redirect
-            const { data: userData, error: userError } = await supabase
-                .from("users")
-                .select("role")
-                .eq("auth_id", data.session.user.id)
-                .single();
-
-            if (userError) {
-                console.error('Error fetching user data:', userError);
-                window.location.href = 'auth.html';
-                return;
-            }
-
-            if (userData) {
-                console.log("Email verified! Redirecting user with role:", userData.role);
-                if (userData.role === "admin") {
-                    window.location.href = "admin-dashboard.html";
-                } else if (userData.role === "student") {
-                    window.location.href = "student-dashboard.html";
-                } else if (userData.role === "landlord") {
-                    window.location.href = "landlordDASH.html";
-                } else {
-                    window.location.href = "student-dashboard.html";
-                }
-            } else {
-                window.location.href = 'auth.html';
-            }
-        } else {
-            window.location.href = 'auth.html';
-        }
-    } catch (err) {
-        console.error('Unexpected error in email verification:', err);
-        window.location.href = 'auth.html';
-    }
-}
-
 document.addEventListener("DOMContentLoaded", function() {
     console.log("Auth script loaded successfully");
     
-    // Check if we're on the email verification callback page
-    if (window.location.pathname.includes('auth-callback.html') || 
-        document.title.includes('Verifying Email')) {
-        console.log("Handling email verification callback...");
-        handleEmailVerification();
-        return; // Stop further execution for callback page
-    }
-    
-    // Regular authentication page functionality
     // Tabs
     const loginTab = document.getElementById("loginTab");
     const registerTab = document.getElementById("registerTab");
@@ -72,8 +15,12 @@ document.addEventListener("DOMContentLoaded", function() {
     const registerForm = document.getElementById("registerForm");
     const switchToRegister = document.getElementById("switchToRegister");
     const switchToLogin = document.getElementById("switchToLogin");
-
-    // Tab switching functionality
+    
+    // Message elements
+    const loginMsg = document.getElementById("loginMsg");
+    const regMsg = document.getElementById("regMsg");
+    
+    // Tab switching functionality (Rest of your existing logic)
     function showLogin() {
         loginForm.classList.add("active");
         registerForm.classList.remove("active");
@@ -88,108 +35,81 @@ document.addEventListener("DOMContentLoaded", function() {
         loginTab.classList.remove("active");
     }
 
-    // Event listeners for tab switching
     if (loginTab) loginTab.addEventListener("click", showLogin);
     if (registerTab) registerTab.addEventListener("click", showRegister);
-    if (switchToRegister) switchToRegister.addEventListener("click", (e) => { e.preventDefault(); showRegister(); });
-    if (switchToLogin) switchToLogin.addEventListener("click", (e) => { e.preventDefault(); showLogin(); });
+    if (switchToRegister) switchToRegister.addEventListener("click", showRegister);
+    if (switchToLogin) switchToLogin.addEventListener("click", showLogin);
 
-    // Message elements
-    const loginMsg = document.getElementById("loginMsg") || createMessageElement(loginForm);
-    const regMsg = document.getElementById("regMsg") || createMessageElement(registerForm);
+    // Helper to show messages
+    function showMessage(element, message, type) {
+        element.textContent = message;
+        element.className = `msg ${type}`;
+    }
 
-    // ----------------------
-    // REGISTER FUNCTIONALITY - REMOVED PASSWORD STORAGE
-    // ----------------------
+    // --- REGISTER FUNCTIONALITY (FIXED) ---
     if (registerForm) {
         registerForm.addEventListener("submit", async (e) => {
             e.preventDefault();
-            
-            const fullName = document.getElementById("fullname").value;
-            const email = document.getElementById("regEmail").value;
-            const password = document.getElementById("regPassword").value;
+            const fullname = document.getElementById("fullname").value;
+            const regEmail = document.getElementById("regEmail").value;
+            const regPassword = document.getElementById("regPassword").value;
             const confirmPassword = document.getElementById("confirmPassword").value;
 
-            // Validation
-            if (password !== confirmPassword) {
+            showMessage(regMsg, "Creating account...", "loading");
+
+            if (regPassword !== confirmPassword) {
                 showMessage(regMsg, "Passwords do not match.", "error");
                 return;
             }
 
-            if (password.length < 6) {
-                showMessage(regMsg, "Password must be at least 6 characters long.", "error");
-                return;
-            }
-
-            showMessage(regMsg, "Creating account...", "loading");
-
             try {
-                // Create user in Supabase Auth
+                // 1. Create user in Supabase Auth (handles hashing and verification email)
                 const { data: authData, error: authError } = await supabase.auth.signUp({
-                    email: email,
-                    password: password,
-                    options: {
-                        data: {
-                            full_name: fullName
-                        },
-                        emailRedirectTo: `${window.location.origin}/auth-callback.html`
-                    }
+                    email: regEmail,
+                    password: regPassword,
                 });
 
                 if (authError) {
                     showMessage(regMsg, authError.message, "error");
                     return;
                 }
+                
+                // Determine initial role (defaulting to student is safest)
+                // You should implement logic here to determine if they are a student or landlord based on your UI/forms.
+                // For now, we'll default to 'student' as a placeholder.
+                const userRole = 'student'; 
 
-                // Determine role based on email domain
-                let role = "landlord"; // default
-                if (email.endsWith("@ub.edu.bz")) {
-                    role = "student";
-                }
-                // Add specific admin email checks
-                if (email === "admin@ublivlink.ub.edu.bz" || email === "housing@ub.edu.bz") {
-                    role = "admin";
-                }
-
-                // Insert user into USERS table WITHOUT PASSWORD - using auth_id only
+                // 2. Insert user into USERS table using the secure Auth ID
                 const { error: userError } = await supabase
                     .from("users")
                     .insert([
                         {
-                            name: fullName,
-                            email: email,
-                            role: role,
-                            auth_id: authData.user?.id
-                            // PASSWORD FIELD REMOVED - handled by Supabase Auth
+                            auth_id: authData.user.id, // Use the unique ID from Supabase Auth
+                            email: regEmail,
+                            full_name: fullname,
+                            role: userRole,
+                            // **CRITICAL:** Removed storing the password here
                         }
                     ]);
-
+                
                 if (userError) {
-                    console.error("User creation error:", userError);
-                    showMessage(regMsg, "Error creating user profile: " + userError.message, "error");
+                    // Log out user if profile insert failed
+                    await supabase.auth.signOut(); 
+                    showMessage(regMsg, "Account created, but profile failed. Please try again.", "error");
                     return;
                 }
 
-                showMessage(regMsg, "Account created successfully! Please check your email to verify your account.", "success");
-                
-                // Clear form
+                showMessage(regMsg, "Account created! Check your email to confirm your account before logging in.", "success");
                 registerForm.reset();
-                
-                // Switch to login after successful registration
-                setTimeout(() => {
-                    showLogin();
-                }, 3000);
 
             } catch (error) {
-                console.error("Registration error:", error);
-                showMessage(regMsg, "An unexpected error occurred: " + error.message, "error");
+                showMessage(regMsg, "An unexpected error occurred during registration.", "error");
+                console.error(error);
             }
         });
     }
 
-    // ----------------------
-    // LOGIN FUNCTIONALITY - FIXED AUTHENTICATION FLOW
-    // ----------------------
+    // --- LOGIN FUNCTIONALITY (FIXED) ---
     if (loginForm) {
         loginForm.addEventListener("submit", async (e) => {
             e.preventDefault();
@@ -200,7 +120,7 @@ document.addEventListener("DOMContentLoaded", function() {
             showMessage(loginMsg, "Signing in...", "loading");
 
             try {
-                // STEP 1: Sign in with Supabase Auth (handles password verification)
+                // 1. Sign in with Supabase Auth (Securely checks password and verification status)
                 const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
                     email: email,
                     password: password
@@ -211,71 +131,43 @@ document.addEventListener("DOMContentLoaded", function() {
                     return;
                 }
 
-                // Check if email is verified
-                if (!authData.user?.email_confirmed_at && !authData.user?.confirmed_at) {
-                    showMessage(loginMsg, "Please verify your email before logging in.", "error");
-                    await supabase.auth.signOut();
-                    return;
-                }
-
-                // STEP 2: Get user role from USERS table using auth_id
+                // 2. Get user role from USERS table (using the AUTH ID)
                 const authId = authData.user.id;
                 const { data: userData, error: userError } = await supabase
                     .from("users")
                     .select("role")
-                    .eq("auth_id", authId)
+                    .eq("auth_id", authId) 
                     .single();
 
                 if (userError || !userData) {
-                    // Log out the user from Supabase if their profile is missing
+                    // **LOOP PREVENTION:** If session exists but role is missing, sign out and show error.
                     await supabase.auth.signOut();
-                    showMessage(loginMsg, "User profile not found. Please register.", "error");
+                    showMessage(loginMsg, "User profile not found. Please contact support.", "error");
                     return;
                 }
 
                 showMessage(loginMsg, "Login successful! Redirecting...", "success");
 
-                // Redirect based on user role - FIXED FILE PATHS
-                setTimeout(() => {
-                    console.log("Redirecting user with role:", userData.role);
-                    if (userData.role === "admin") {
-                        window.location.href = "admin-dashboard.html";
-                    } else if (userData.role === "student") {
-                        window.location.href = "student-dashboard.html";
-                    } else if (userData.role === "landlord") {
-                        window.location.href = "landlordDASH.html";
-                    } else {
-                        // Default fallback
-                        window.location.href = "student-dashboard.html";
-                    }
-                }, 1500);
+                // 3. Redirect based on role
+                if (userData.role === "admin") {
+                    window.location.href = "admin-dashboard.html";
+                } else if (userData.role === "student") {
+                    window.location.href = "student-dashboard.html";
+                } else if (userData.role === "landlord") {
+                    window.location.href = "landlordDASH.html";
+                } else {
+                    // Default fallback
+                    window.location.href = "student-dashboard.html"; 
+                }
 
             } catch (error) {
-                console.error("Login error:", error);
-                showMessage(loginMsg, "An unexpected error occurred: " + error.message, "error");
+                showMessage(loginMsg, "An unexpected login error occurred.", "error");
+                console.error(error);
             }
         });
     }
 
-    // Helper function to show messages
-    function showMessage(element, message, type) {
-        if (!element) return;
-        
-        element.textContent = message;
-        element.style.color = type === "error" ? "red" : 
-                            type === "success" ? "green" : 
-                            "#7D2D91";
-    }
-
-    // Helper function to create message element if it doesn't exist
-    function createMessageElement(form) {
-        const msgElement = document.createElement("p");
-        msgElement.className = "msg";
-        form.appendChild(msgElement);
-        return msgElement;
-    }
-
-    // Check if user is already logged in - FIXED FILE PATHS
+    // --- AUTH STATE CHECK (LOOP PREVENTION) ---
     checkAuthState();
 
     async function checkAuthState() {
@@ -284,10 +176,11 @@ document.addEventListener("DOMContentLoaded", function() {
         if (session) {
             // User is already logged in, redirect to appropriate dashboard
             try {
+                // We use the auth_id for a quick lookup
                 const { data: userData } = await supabase
                     .from("users")
                     .select("role")
-                    .eq("auth_id", session.user.id)
+                    .eq("auth_id", session.user.id) // Correctly using auth_id
                     .single();
 
                 if (userData) {
@@ -299,9 +192,15 @@ document.addEventListener("DOMContentLoaded", function() {
                     } else if (userData.role === "landlord") {
                         window.location.href = "landlordDASH.html";
                     }
+                } else {
+                    // **CRITICAL LOOP BREAKER:** User has a session but no profile (or wrong role)
+                    console.error("Session found but no valid user profile. Signing out to prevent loop.");
+                    await supabase.auth.signOut();
+                    // Let the page reload or stay on login
                 }
             } catch (error) {
-                console.error("Error checking auth state:", error);
+                console.error("Error checking auth state, signing out to prevent loop:", error);
+                await supabase.auth.signOut();
             }
         }
     }
