@@ -194,6 +194,9 @@ body {
   z-index: 2;
   flex: 1;
 }
+.landing-page .hero-content p {
+  color: #f8f9fa;
+}
 
 .landing-page .hero-visual {
   flex: 1;
@@ -206,8 +209,7 @@ body {
 .landing-page .hero-image {
   max-width: 100%;
   height: auto;
-  border-radius: 20px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+
 }
 
 .landing-page .hero h1 {
