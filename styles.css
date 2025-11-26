@@ -2460,6 +2460,42 @@ input:checked + .slider:before {
     font-weight: 500;
 }
 
+/* Property info styling for the new layout */
+.property-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.property-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.property-name {
+    font-weight: 700;
+    color: var(--text-color-dash);
+    font-size: 1rem;
+}
+
+.property-location {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+/* Mini badge styling for verification status */
+.mini-badge {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-block;
+    vertical-align: middle;
+}
 /* Action Buttons */
 .uba-action-btn {
     padding: 8px 12px;

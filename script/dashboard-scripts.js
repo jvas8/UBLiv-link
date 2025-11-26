@@ -300,12 +300,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const tableHTML = `
             <div class="table-header table-row">
-                <div>Location</div>
+                <div>Property</div>
                 <div>Price</div>
                 <div>Beds</div>
                 <div>Rating</div>
                 <div>Status</div>
-                <div>Verification</div>
                 <div>Actions</div>
             </div>
             ${listings.map(listing => {
@@ -331,15 +330,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 return `
                     <div class="table-row" data-listing-id="${listing.listing_id}">
-                        <div>${listing.location}</div>
+                        <div>
+                            <div class="property-info">
+                                <div class="property-header">
+                                    <span class="property-name">${listing.name}</span>
+                                    <span class="mini-badge ${verificationBadgeClass}">
+                                        ${vStatus.charAt(0).toUpperCase() + vStatus.slice(1)}
+                                    </span>
+                                </div>
+                                <div class="property-location">${listing.location}</div>
+                            </div>
+                        </div>
                         <div>$${priceDisplay}</div>
                         <div>${bedrooms}</div>
                         <div>${ratingDisplay}</div>
                         <div class="${statusClass}">
                             ${status}
-                        </div>
-                        <div class="${verificationBadgeClass}">
-                            ${vStatus.charAt(0).toUpperCase() + vStatus.slice(1)}
                         </div>
                         <div class="actions">
                             <button class="action-btn edit edit-listing-btn" title="Edit Listing Details">
