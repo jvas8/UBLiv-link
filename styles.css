@@ -2430,6 +2430,35 @@ input:checked + .slider:before {
     background-color: #f8d7da; 
     color: #721c24; 
 }
+/* Add these styles to your existing CSS file */
+
+/* Status badge styling */
+.status-active {
+    background-color: #d4edda;
+    color: #155724;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.status-inactive {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.status-pending {
+    background-color: #fff3cd;
+    color: #856404;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
 
 /* Action Buttons */
 .uba-action-btn {

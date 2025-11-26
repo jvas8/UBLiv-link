@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return [];
         }
         
-        // FIXED: Use proper single .select() with all required fields
+        // UPDATED: Include verification_status in the select query
         const { data: listings, error } = await supabase
             .from('listings')
             .select(`
@@ -180,6 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 location,
                 price, 
                 availability, 
+                verification_status,
                 property_details(bedrooms), 
                 reviews(rating)
             `)
@@ -304,6 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div>Beds</div>
                 <div>Rating</div>
                 <div>Status</div>
+                <div>Verification</div>
                 <div>Actions</div>
             </div>
             ${listings.map(listing => {
@@ -315,6 +317,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 const priceDisplay = parseFloat(listing.price).toFixed(2);
                 const ratingDisplay = listing.avgRating ? `${listing.avgRating}/5` : 'N/A'; 
 
+                // NEW: Determine verification status badge
+                let verificationBadgeClass = '';
+                const vStatus = listing.verification_status || 'pending';
+
+                if (vStatus === 'verified') {
+                    verificationBadgeClass = 'status-active';
+                } else if (vStatus === 'rejected') {
+                    verificationBadgeClass = 'status-inactive';
+                } else {
+                    verificationBadgeClass = 'status-pending';
+                }
+
                 return `
                     <div class="table-row" data-listing-id="${listing.listing_id}">
                         <div>${listing.location}</div>
@@ -323,6 +337,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div>${ratingDisplay}</div>
                         <div class="${statusClass}">
                             ${status}
+                        </div>
+                        <div class="${verificationBadgeClass}">
+                            ${vStatus.charAt(0).toUpperCase() + vStatus.slice(1)}
                         </div>
                         <div class="actions">
                             <button class="action-btn edit edit-listing-btn" title="Edit Listing Details">
