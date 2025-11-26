@@ -69,9 +69,10 @@ async function fetchOverviewData() {
 
         // 2. Total Active Listings
         let { count: activeCount, error: activeError } = await supabase
-            .from('listings')
-            .select('*', { count: 'exact', head: true })
-            .eq('availability', true);
+  .from('listings')
+    .select('*', { count: 'exact', head: true })
+    .eq('availability', true)
+    .eq('verification_status', 'verified');
 
         if (activeError) {
             console.error("Error fetching active listings:", activeError.message);
