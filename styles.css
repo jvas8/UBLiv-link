@@ -2830,6 +2830,7 @@ input:checked + .slider:before {
 
 /* ===== COMPREHENSIVE MOBILE RESPONSIVE STYLES ===== */
 /* ===== COMPREHENSIVE MOBILE RESPONSIVE STYLES ===== */
+/* ===== COMPREHENSIVE MOBILE RESPONSIVE STYLES ===== */
 
 /* Base Mobile Styles (applies to all pages) */
 @media (max-width: 768px) {
@@ -2856,43 +2857,41 @@ input:checked + .slider:before {
     text-align: center;
   }
   
-  /* Main Navigation (All Pages) */
+  /* FIX: Main Navigation (All Pages) - PROPER MOBILE NAV */
   .main-nav {
     padding: 1rem 4%;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    position: relative;
   }
   
   .logo {
     font-size: 1.25rem;
+    flex-shrink: 0;
   }
   
   .nav-actions {
-    gap: 1rem;
-    order: 3;
-    width: 100%;
-    justify-content: center;
-    margin-top: 1rem;
-    display: none; /* Hidden by default, shown via mobile menu */
+    display: flex !important; /* Force show on mobile */
+    gap: 0.75rem;
+    order: 0;
+    width: auto;
+    margin-top: 0;
+    align-items: center;
   }
   
-  .nav-actions.mobile-visible {
-    display: flex;
-    flex-direction: column;
+  .nav-actions span {
+    display: none; /* Hide welcome text on mobile */
   }
   
   .btn-logout {
-    padding: 0.5rem 1.25rem;
-    font-size: 0.85rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+    white-space: nowrap;
   }
   
-  /* Mobile Menu Toggle */
+  /* Remove mobile menu toggle since we're showing nav actions */
   .mobile-menu-toggle {
-    display: block;
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    color: var(--primary-color);
-    cursor: pointer;
+    display: none;
   }
   
   /* LANDING PAGE Mobile Styles */
@@ -2974,7 +2973,7 @@ input:checked + .slider:before {
     padding: 0.75rem;
   }
   
-  /* STUDENT DASHBOARD Mobile Styles */
+  /* STUDENT DASHBOARD Mobile Styles - FIX LOGOUT BUTTON */
   .dashboard-header {
     padding: 2rem 5%;
     margin-top: 60px;
@@ -3081,7 +3080,7 @@ input:checked + .slider:before {
     flex-direction: column;
   }
   
-  /* LANDLORD DASHBOARD Mobile Styles */
+  /* LANDLORD DASHBOARD Mobile Styles - FIX ADD LISTING BUTTON */
   .dashboard-wrapper {
     flex-direction: column;
   }
@@ -3105,6 +3104,7 @@ input:checked + .slider:before {
     display: flex;
     justify-content: space-around;
     flex-grow: 0;
+    position: relative;
   }
   
   .nav-item {
@@ -3121,7 +3121,28 @@ input:checked + .slider:before {
     border-top: 3px solid var(--accent-color);
   }
   
+  /* FIX: Show Add Listing Button in Mobile Bottom Nav */
   .add-listing-btn {
+    display: block !important;
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    padding: 0;
+    margin: 0;
+    z-index: 1001;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    font-size: 1.5rem;
+  }
+  
+  .add-listing-btn::before {
+    content: "+";
+    display: block;
+  }
+  
+  .add-listing-btn span {
     display: none;
   }
   
@@ -3151,6 +3172,8 @@ input:checked + .slider:before {
   /* Landlord Tables */
   .landlord-listing-table {
     overflow-x: auto;
+    display: block;
+    width: 100%;
   }
   
   .table-header, 
@@ -3182,7 +3205,7 @@ input:checked + .slider:before {
     flex-direction: column;
   }
   
-  /* ADMIN DASHBOARD Mobile Styles */
+  /* ADMIN DASHBOARD Mobile Styles - FIX TABLES & LOGOUT */
   .uba-wrapper {
     flex-direction: column;
   }
@@ -3222,8 +3245,23 @@ input:checked + .slider:before {
     border-top: 3px solid var(--accent-color);
   }
   
+  /* FIX: Show Logout in Mobile Bottom Nav */
   .uba-sidebar-footer {
-    display: none;
+    display: none; /* Hide the footer logout */
+  }
+  
+  .uba-logout-btn.mobile {
+    display: block !important;
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    background: rgba(220, 53, 69, 0.9);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+    z-index: 1002;
   }
   
   .uba-content-area {
@@ -3244,15 +3282,18 @@ input:checked + .slider:before {
     font-size: 2.5rem;
   }
   
-  /* Admin Tables */
+  /* FIX: Admin Tables - Proper Scrolling */
   .uba-verification-table {
     overflow-x: auto;
+    display: block;
+    width: 100%;
+    -webkit-overflow-scrolling: touch;
   }
   
   .uba-table-header,
   .uba-table-row {
     grid-template-columns: 2fr 1fr 1fr 1.5fr;
-    min-width: 600px; /* Enable horizontal scroll */
+    min-width: 650px; /* Enable horizontal scroll */
     padding: 1rem;
     font-size: 0.8rem;
   }
@@ -3261,8 +3302,22 @@ input:checked + .slider:before {
     padding: 0.5rem 0.75rem;
     font-size: 0.75rem;
     margin-bottom: 0.25rem;
+    display: inline-block;
+    width: auto;
+    margin-right: 0.25rem;
+  }
+  
+  /* FIX: Verification Report Tables */
+  .uba-verification-report-table-container,
+  .uba-review-report-table-container {
+    overflow-x: auto;
     display: block;
     width: 100%;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .uba-data-table {
+    min-width: 700px; /* Ensure tables are scrollable */
   }
   
   /* Admin Forms */
@@ -3366,6 +3421,20 @@ input:checked + .slider:before {
     padding: 0.75rem;
     min-width: 500px;
   }
+  
+  /* Even smaller tables for very small phones */
+  @media (max-width: 360px) {
+    .table-header, 
+    .table-row,
+    .uba-table-header,
+    .uba-table-row {
+      min-width: 450px;
+    }
+    
+    .uba-data-table {
+      min-width: 600px;
+    }
+  }
 }
 
 /* Tablet Optimizations */
@@ -3418,11 +3487,6 @@ input:checked + .slider:before {
   
   .desktop-only {
     display: none;
-  }
-  
-  /* Show mobile menu toggle */
-  .mobile-menu-toggle {
-    display: block;
   }
 }
 
