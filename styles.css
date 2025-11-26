@@ -222,7 +222,7 @@ body {
 }
 .landing-page .hero p {
   font-size: 1.2rem;
-  color: rgba(255, 255, 255, 0.95);
+color: #f8f9fa; /* Changed from rgba(...) to solid off-white */
   margin-bottom: 2.5rem;
   line-height: 1.6;
 }
