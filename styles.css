@@ -2129,7 +2129,7 @@ input:checked + .slider:before {
 
 .landing-page .hero p {
   font-size: 1.2rem;
-  color: #5A5A5A;
+  color: #f8f9fa;
   margin-bottom: 2.5rem;
   line-height: 1.6;
 }
