@@ -311,12 +311,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const status = listing.availability ? 'Active' : 'Inactive';
                 const statusClass = listing.availability ? 'status-active' : 'status-inactive';
                 
+                // FIXED: Force 2 decimal places for price display
+                const priceDisplay = parseFloat(listing.price).toFixed(2);
                 const ratingDisplay = listing.avgRating ? `${listing.avgRating}/5` : 'N/A'; 
 
                 return `
                     <div class="table-row" data-listing-id="${listing.listing_id}">
                         <div>${listing.location}</div>
-                        <div>$${listing.price}</div>
+                        <div>$${priceDisplay}</div>
                         <div>${bedrooms}</div>
                         <div>${ratingDisplay}</div>
                         <div class="${statusClass}">
@@ -427,7 +429,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         editName.value = listing.name; 
         editLocation.value = listing.location;
-        editPrice.value = listing.price;
+        
+        // FIXED: Force 2 decimal places when filling the edit form
+        editPrice.value = parseFloat(listing.price).toFixed(2);
+        
         editBedrooms.value = listing.property_details ? listing.property_details.bedrooms : '';
         editDescription.value = listing.property_details ? listing.property_details.description || '' : '';
         editAvailability.value = listing.availability.toString(); 
@@ -445,10 +450,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         displayMessage('Saving changes...', 'info', editMessage);
 
+        // FIXED: Ensure price is properly formatted to avoid floating point errors
         const listingUpdateData = {
             name: editName.value, 
             location: editLocation.value,
-            price: parseInt(editPrice.value, 10),
+            price: parseFloat(parseFloat(editPrice.value).toFixed(2)), // Double protection
             availability: editAvailability.value === 'true' 
         };
 
@@ -525,11 +531,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error('Location is required and cannot be empty.');
             }
             
+            // FIXED: Ensure price is properly formatted to avoid floating point errors
             const listingData = {
                 landlord_id: landlordId,
                 name: listingName.trim(),
                 location: listingLocation.trim(),
-                price: parseFloat(formData.get('price')),
+                price: parseFloat(parseFloat(formData.get('price')).toFixed(2)), // Double protection
                 leasing: formData.get('leasing'),
             };
 
