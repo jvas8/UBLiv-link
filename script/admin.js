@@ -115,13 +115,6 @@ function renderOverviewData(data) {
     document.getElementById('verified-count').textContent = mockVerifiedCount; 
     document.getElementById('total-pending').textContent = totalPending; 
 
-    const progressBar = document.getElementById('uba-progress-bar');
-    if (totalPending > 0) {
-        const percentage = (Math.min(mockVerifiedCount, totalPending) / totalPending) * 100;
-        progressBar.style.width = `${percentage}%`;
-    } else {
-        progressBar.style.width = '100%'; 
-    }
 }
 
 // ===========================================
