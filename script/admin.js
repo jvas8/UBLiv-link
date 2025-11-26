@@ -18,40 +18,6 @@ async function handleLogout() {
     }
     window.location.replace('/'); 
 }
-// Mobile navigation fixes
-document.addEventListener('DOMContentLoaded', function() {
-  // Add mobile logout button to Admin Dashboard
-  const adminContent = document.querySelector('.uba-content-area');
-  if (adminContent && !document.querySelector('.uba-logout-btn.mobile')) {
-    const mobileLogoutBtn = document.createElement('button');
-    mobileLogoutBtn.className = 'uba-logout-btn mobile';
-    mobileLogoutBtn.textContent = 'Logout';
-    mobileLogoutBtn.onclick = function() {
-      // Add your logout logic here
-      window.location.href = 'index.html';
-    };
-    document.querySelector('.uba-wrapper').appendChild(mobileLogoutBtn);
-  }
-  
-  // Ensure tables are scrollable on mobile
-  const makeTablesScrollable = function() {
-    const tables = document.querySelectorAll('.uba-verification-table, .uba-verification-report-table-container, .uba-review-report-table-container, .landlord-listing-table');
-    tables.forEach(table => {
-      if (window.innerWidth <= 768) {
-        table.style.overflowX = 'auto';
-        table.style.display = 'block';
-        table.style.width = '100%';
-      } else {
-        table.style.overflowX = '';
-        table.style.display = '';
-        table.style.width = '';
-      }
-    });
-  };
-  
-  makeTablesScrollable();
-  window.addEventListener('resize', makeTablesScrollable);
-});
 
 async function checkAuthAndRedirect() {
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();

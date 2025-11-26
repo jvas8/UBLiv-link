@@ -2827,681 +2827,232 @@ input:checked + .slider:before {
   /* Remove the dark overlay */
   background: transparent !important;
 }
+/* ==========================================================================
+   MOBILE & RESPONSIVE STYLES (Paste at the bottom of styles.css)
+   ========================================================================== */
 
-/* ===== COMPREHENSIVE MOBILE RESPONSIVE STYLES ===== */
-/* ===== COMPREHENSIVE MOBILE RESPONSIVE STYLES ===== */
-/* ===== COMPREHENSIVE MOBILE RESPONSIVE STYLES ===== */
+/* 1. LANDING PAGE MOBILE (index.html) */
+@media (max-width: 900px) {
+    .landing-page nav {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+    }
 
-/* Base Mobile Styles (applies to all pages) */
-@media (max-width: 768px) {
-  /* Common Elements Across All Pages */
-  body {
-    font-size: 14px;
-  }
-  
-  .section-title {
-    font-size: 1.75rem;
-    margin-bottom: 1rem;
-  }
-  
-  .section-subtitle {
-    font-size: 1rem;
-    margin-bottom: 2rem;
-  }
-  
-  .btn-primary, 
-  .btn-secondary {
-    padding: 0.875rem 1.5rem;
-    font-size: 0.9rem;
-    width: 100%;
-    text-align: center;
-  }
-  
-  /* FIX: Main Navigation (All Pages) - PROPER MOBILE NAV */
-  .main-nav {
-    padding: 1rem 4%;
-    flex-wrap: nowrap;
-    justify-content: space-between;
-    position: relative;
-  }
-  
-  .logo {
-    font-size: 1.25rem;
-    flex-shrink: 0;
-  }
-  
-  .nav-actions {
-    display: flex !important; /* Force show on mobile */
-    gap: 0.75rem;
-    order: 0;
-    width: auto;
-    margin-top: 0;
-    align-items: center;
-  }
-  
-  .nav-actions span {
-    display: none; /* Hide welcome text on mobile */
-  }
-  
-  .btn-logout {
-    padding: 0.5rem 1rem;
-    font-size: 0.8rem;
-    white-space: nowrap;
-  }
-  
-  /* Remove mobile menu toggle since we're showing nav actions */
-  .mobile-menu-toggle {
-    display: none;
-  }
-  
-  /* LANDING PAGE Mobile Styles */
-  .landing-page .hero {
-    flex-direction: column;
-    padding: 2rem 5%;
-    text-align: center;
-    gap: 2rem;
-    margin-top: 60px;
-    min-height: auto;
-  }
-  
-  .landing-page .hero h1 {
-    font-size: 2rem;
-    margin-bottom: 1rem;
-  }
-  
-  .landing-page .hero p {
-    font-size: 1rem;
-    margin-bottom: 1.5rem;
-  }
-  
-  .landing-page .hero-buttons {
-    flex-direction: column;
-    gap: 1rem;
-  }
-  
-  .landing-page .stats {
-    flex-direction: column;
-    gap: 1.5rem;
-    margin-top: 2rem;
-  }
-  
-  .landing-page .features {
-    padding: 3rem 5%;
-  }
-  
-  .features-grid {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-    margin-top: 2rem;
-  }
-  
-  .feature-card {
-    padding: 1.5rem;
-  }
-  
-  .landing-page .cta {
-    padding: 3rem 5%;
-  }
-  
-  .landing-page .cta h2 {
-    font-size: 2rem;
-  }
-  
-  .landing-page .cta p {
-    font-size: 1rem;
-  }
-  
-  /* AUTH PAGE Mobile Styles */
-  .auth-container {
-    padding: 1rem;
-  }
-  
-  .auth-card {
-    padding: 2rem 1.5rem;
-    margin: 0;
-  }
-  
-  .auth-header h1 {
-    font-size: 2rem;
-  }
-  
-  .tab-container {
-    flex-direction: column;
-  }
-  
-  .tab {
-    padding: 0.75rem;
-  }
-  
-  /* STUDENT DASHBOARD Mobile Styles - FIX LOGOUT BUTTON */
-  .dashboard-header {
-    padding: 2rem 5%;
-    margin-top: 60px;
-  }
-  
-  .dashboard-header h1 {
-    font-size: 1.75rem;
-  }
-  
-  .dashboard-header p {
-    font-size: 1rem;
-  }
-  
-  .filters {
-    margin: -1.5rem 5% 2rem;
-    padding: 1.5rem;
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-  
-  .filter-group label {
-    font-size: 0.8rem;
-  }
-  
-  .listing-section {
-    padding: 0 5% 3rem;
-  }
-  
-  .listings-grid {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-  }
-  
-  .listing-card {
-    margin-bottom: 1rem;
-  }
-  
-  .listing-info {
-    padding: 1.25rem;
-  }
-  
-  .listing-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-  
-  .listing-actions {
-    flex-direction: column;
-    gap: 0.5rem;
-    padding: 0 1.25rem 1.25rem;
-  }
-  
-  /* Image Carousel Mobile Fixes */
-  .image-carousel {
-    height: 200px;
-  }
-  
-  .carousel-prev,
-  .carousel-next {
-    width: 30px;
-    height: 30px;
-    font-size: 1rem;
-  }
-  
-  /* MODALS Mobile Styles */
-  .modal-overlay {
-    padding: 1rem;
-  }
-  
-  .form-container {
-    padding: 1.5rem;
-    max-height: 85vh;
-    overflow-y: auto;
-  }
-  
-  .form-container h1 {
-    font-size: 1.5rem;
-  }
-  
-  .rating-widget label {
-    font-size: 2rem;
-  }
-  
-  .button-group {
-    flex-direction: column;
-  }
-  
-  /* Contact Modal Specific */
-  .form-container.advanced {
-    padding: 1.5rem;
-  }
-  
-  .progress-bar {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .step {
-    width: 100%;
-  }
-  
-  .radio-card-group {
-    flex-direction: column;
-  }
-  
-  /* LANDLORD DASHBOARD Mobile Styles - FIX ADD LISTING BUTTON */
-  .dashboard-wrapper {
-    flex-direction: column;
-  }
-  
-  .sidebar {
-    width: 100%;
-    padding: 1rem 0;
-    position: fixed;
-    bottom: 0;
-    top: auto;
-    z-index: 1000;
-    height: auto;
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-  }
-  
-  .logo-container {
-    display: none;
-  }
-  
-  .nav-menu {
-    display: flex;
-    justify-content: space-around;
-    flex-grow: 0;
-    position: relative;
-  }
-  
-  .nav-item {
-    padding: 0.75rem 0.5rem;
-    text-align: center;
-    font-size: 0.8rem;
-    border-left: none;
-    border-top: 3px solid transparent;
-    flex: 1;
-  }
-  
-  .nav-item.active {
-    border-left: none;
-    border-top: 3px solid var(--accent-color);
-  }
-  
-  /* FIX: Show Add Listing Button in Mobile Bottom Nav */
-  .add-listing-btn {
-    display: block !important;
-    position: fixed;
-    bottom: 80px;
-    right: 20px;
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    padding: 0;
-    margin: 0;
-    z-index: 1001;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    font-size: 1.5rem;
-  }
-  
-  .add-listing-btn::before {
-    content: "+";
-    display: block;
-  }
-  
-  .add-listing-btn span {
-    display: none;
-  }
-  
-  .content-area {
-    padding: 1.5rem;
-    margin-bottom: 80px; /* Space for bottom nav */
-  }
-  
-  .landlord-module {
-    padding: 1.5rem;
-  }
-  
-  .stats-grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-    margin-bottom: 2rem;
-  }
-  
-  .stat-card {
-    padding: 1.25rem;
-  }
-  
-  .stat-number {
-    font-size: 2rem;
-  }
-  
-  /* Landlord Tables */
-  .landlord-listing-table {
-    overflow-x: auto;
-    display: block;
-    width: 100%;
-  }
-  
-  .table-header, 
-  .table-row {
-    grid-template-columns: 2fr 1fr 1fr 1.5fr;
-    min-width: 600px; /* Enable horizontal scroll */
-    padding: 1rem;
-  }
-  
-  .table-header > div,
-  .table-row > div {
-    font-size: 0.8rem;
-  }
-  
-  /* Landlord Forms */
-  .landlord-module form {
-    padding: 1.5rem;
-  }
-  
-  .landlord-module fieldset {
-    padding: 1rem;
-  }
-  
-  .fieldset-content.grid-2 {
-    grid-template-columns: 1fr;
-  }
-  
-  .form-actions {
-    flex-direction: column;
-  }
-  
-  /* ADMIN DASHBOARD Mobile Styles - FIX TABLES & LOGOUT */
-  .uba-wrapper {
-    flex-direction: column;
-  }
-  
-  .uba-sidebar {
-    width: 100%;
-    padding: 1rem 0;
-    position: fixed;
-    bottom: 0;
-    top: auto;
-    z-index: 1000;
-    height: auto;
-  }
-  
-  .uba-logo-container {
-    display: none;
-  }
-  
-  .uba-nav-menu {
-    display: flex;
-    justify-content: space-around;
-  }
-  
-  .uba-nav-item {
-    padding: 0.75rem 0.5rem;
-    text-align: center;
-    font-size: 0.8rem;
-    border-left: none;
-    border-top: 3px solid transparent;
-    flex: 1;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-  
-  .uba-nav-item.active {
-    border-left: none;
-    border-top: 3px solid var(--accent-color);
-  }
-  
-  /* FIX: Show Logout in Mobile Bottom Nav */
-  .uba-sidebar-footer {
-    display: none; /* Hide the footer logout */
-  }
-  
-  .uba-logout-btn.mobile {
-    display: block !important;
-    position: fixed;
-    top: 15px;
-    right: 15px;
-    background: rgba(220, 53, 69, 0.9);
-    color: white;
-    border: none;
-    border-radius: 20px;
-    padding: 0.5rem 1rem;
-    font-size: 0.8rem;
-    z-index: 1002;
-  }
-  
-  .uba-content-area {
-    padding: 1.5rem;
-    margin-bottom: 80px; /* Space for bottom nav */
-  }
-  
-  .uba-stats-grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-  
-  .uba-stat-card {
-    padding: 1.25rem;
-  }
-  
-  .uba-stat-number {
-    font-size: 2.5rem;
-  }
-  
-  /* FIX: Admin Tables - Proper Scrolling */
-  .uba-verification-table {
-    overflow-x: auto;
-    display: block;
-    width: 100%;
-    -webkit-overflow-scrolling: touch;
-  }
-  
-  .uba-table-header,
-  .uba-table-row {
-    grid-template-columns: 2fr 1fr 1fr 1.5fr;
-    min-width: 650px; /* Enable horizontal scroll */
-    padding: 1rem;
-    font-size: 0.8rem;
-  }
-  
-  .uba-action-btn {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.75rem;
-    margin-bottom: 0.25rem;
-    display: inline-block;
-    width: auto;
-    margin-right: 0.25rem;
-  }
-  
-  /* FIX: Verification Report Tables */
-  .uba-verification-report-table-container,
-  .uba-review-report-table-container {
-    overflow-x: auto;
-    display: block;
-    width: 100%;
-    -webkit-overflow-scrolling: touch;
-  }
-  
-  .uba-data-table {
-    min-width: 700px; /* Ensure tables are scrollable */
-  }
-  
-  /* Admin Forms */
-  .uba-verification-form-container {
-    margin-top: 1rem;
-  }
-  
-  .uba-verification-form-header {
-    padding: 1.25rem 1.5rem;
-    flex-direction: column;
-    gap: 1rem;
-    text-align: center;
-  }
-  
-  .uba-verification-form-content {
-    padding: 1.5rem;
-  }
-  
-  .uba-form-actions {
-    flex-direction: column;
-  }
-  
-  .uba-report-section {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-  
-  .uba-report-card,
-  .uba-settings-card {
-    padding: 1.5rem;
-  }
-  
-  .uba-filter-section {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .uba-data-table {
-    font-size: 0.8rem;
-  }
-  
-  .uba-data-table th,
-  .uba-data-table td {
-    padding: 0.5rem;
-  }
-  
-  /* Property info mobile adjustments */
-  .property-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.25rem;
-  }
-  
-  /* Footer */
-  .main-footer {
-    padding: 2rem 1rem;
-    margin-top: 2rem;
-  }
+    .landing-page .nav-links {
+        gap: 1rem;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .landing-page .hero {
+        flex-direction: column;
+        text-align: center;
+        padding: 6rem 5% 2rem 5%; /* Top padding for fixed nav */
+        gap: 2rem;
+    }
+
+    .landing-page .hero-content {
+        padding-right: 0;
+        order: 1; /* Text first */
+    }
+
+    .landing-page .hero-image {
+        order: 2; /* Image second */
+    }
+
+    .landing-page .hero h1 {
+        font-size: 2.5rem;
+    }
+
+    .landing-page .features-grid {
+        grid-template-columns: 1fr; /* Stack features */
+    }
 }
 
-/* Small Phone Optimizations */
+/* 2. AUTH PAGE MOBILE (auth.html) */
 @media (max-width: 480px) {
-  .landing-page .hero h1 {
-    font-size: 1.75rem;
-  }
-  
-  .landing-page .hero p {
-    font-size: 0.9rem;
-  }
-  
-  .dashboard-header h1 {
-    font-size: 1.5rem;
-  }
-  
-  .section-title {
-    font-size: 1.5rem;
-  }
-  
-  .auth-card {
-    padding: 1.5rem 1rem;
-  }
-  
-  .form-container {
-    padding: 1.25rem;
-  }
-  
-  .content-area,
-  .uba-content-area {
-    padding: 1rem;
-  }
-  
-  .landlord-module,
-  .uba-module {
-    padding: 1rem;
-  }
-  
-  .table-header, 
-  .table-row,
-  .uba-table-header,
-  .uba-table-row {
-    padding: 0.75rem;
-    min-width: 500px;
-  }
-  
-  /* Even smaller tables for very small phones */
-  @media (max-width: 360px) {
-    .table-header, 
-    .table-row,
-    .uba-table-header,
-    .uba-table-row {
-      min-width: 450px;
+    .auth-page {
+        padding: 1rem;
+    }
+
+    .auth-page .container {
+        padding: 1.5rem;
+        width: 100%;
+    }
+}
+
+/* 3. STUDENT DASHBOARD MOBILE (student-dashboard.html) */
+@media (max-width: 768px) {
+    /* Stack Navigation */
+    .main-nav {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+        text-align: center;
+    }
+
+    /* Stack Welcome Msg and Logout Button */
+    .nav-actions {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    #welcome-message {
+        display: block;
+        margin-bottom: 0.2rem;
+        font-size: 0.9rem;
+    }
+
+    /* Make Logout Button Full Width on Mobile */
+    .btn-logout {
+        width: 100%;
+        max-width: 300px;
+        padding: 12px;
+    }
+
+    /* Listings Stack (1 Column) */
+    .listings-container {
+        grid-template-columns: 1fr;
+        padding: 1rem;
+        gap: 1.5rem;
+    }
+
+    .filters {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+/* 4. ADMIN & LANDLORD DASHBOARDS MOBILE */
+/* Applies to both landlordDASH.html and admin-dashboard.html */
+@media (max-width: 900px) {
+    
+    /* Wrapper becomes vertical */
+    .dashboard-wrapper, 
+    .uba-wrapper {
+        flex-direction: column;
+    }
+
+    /* Sidebar transforms into Top Navigation Bar */
+    .sidebar, 
+    .uba-sidebar {
+        width: 100%;
+        height: auto;
+        position: relative; /* Un-fix the position */
+        padding: 1rem;
+        border-right: none;
+        border-bottom: 1px solid #ddd;
+        flex-direction: row; /* Layout items horizontally */
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        overflow-y: visible; /* Disable vertical scroll */
+    }
+
+    /* Header/Logo Area */
+    .logo-container, 
+    .uba-logo-container {
+        margin-bottom: 0;
+        width: 100%;
+        justify-content: center;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    /* Navigation Links - Horizontal Scroll */
+    .nav-menu, 
+    .uba-nav-menu {
+        width: 100%;
+        overflow-x: auto; /* Allow sideways scrolling */
+        white-space: nowrap;
+        padding: 10px 0;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .nav-menu ul, 
+    .uba-nav-menu {
+        display: flex;
+        flex-direction: row;
+        gap: 10px;
+    }
+
+    .nav-item, 
+    .uba-nav-item {
+        display: inline-block;
+        margin-bottom: 0;
+        padding: 8px 15px;
+        background: rgba(0,0,0,0.05); /* Slight background for tap targets */
+        border-radius: 20px;
+    }
+
+    /* Active State for Mobile Nav */
+    .uba-nav-item.active {
+        background: rgba(255,255,255,0.2);
+        border: 1px solid rgba(255,255,255,0.3);
+    }
+
+    /* Sidebar Footer (Logout) */
+    .sidebar-footer, 
+    .uba-sidebar-footer {
+        width: 100%;
+        margin-top: 10px;
+        border-top: none;
+    }
+
+    .logout-btn, 
+    .uba-logout-btn {
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+
+    /* Main Content Area */
+    .dashboard-main, 
+    .uba-main {
+        margin-left: 0; /* Remove the left margin reserved for desktop sidebar */
+        padding: 1rem;
+        width: 100%;
+    }
+
+    /* Stats Grid Stacking */
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* FORCE TABLES TO SCROLL HORIZONTALLY */
+    /* This fixes the "messed up tables" by keeping layout intact but adding scroll */
+    .listings-table-container,
+    .uba-verification-table,
+    #uba-verification-report,
+    #uba-review-report,
+    .table-responsive {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Ensure table content doesn't squash */
+    table {
+        min-width: 600px; /* Forces table to be wide enough to read */
+    }
+
+    /* Hide complex headers on very small screens if needed */
+    .uba-table-header {
+        display: none; 
     }
     
-    .uba-data-table {
-      min-width: 600px;
+    /* Convert Grid Rows to Cards for Admin Queue */
+    .uba-table-row {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 15px;
+        border: 1px solid #ddd;
+        margin-bottom: 10px;
+        background: #fff;
     }
-  }
-}
-
-/* Tablet Optimizations */
-@media (min-width: 769px) and (max-width: 1024px) {
-  .landing-page .hero {
-    padding: 0 5%;
-    gap: 3rem;
-  }
-  
-  .landing-page .hero h1 {
-    font-size: 2.75rem;
-  }
-  
-  .features-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .listings-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .sidebar {
-    width: 200px;
-  }
-  
-  .uba-sidebar {
-    width: 220px;
-  }
-  
-  .content-area,
-  .uba-content-area {
-    padding: 2rem;
-  }
-  
-  .stats-grid,
-  .uba-stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-/* Utility class for hiding elements on mobile */
-.mobile-only {
-  display: none;
-}
-
-@media (max-width: 768px) {
-  .mobile-only {
-    display: block;
-  }
-  
-  .desktop-only {
-    display: none;
-  }
-}
-
-/* Fix for touch devices */
-@media (hover: none) and (pointer: coarse) {
-  .btn-primary:hover,
-  .btn-secondary:hover,
-  .btn-contact:hover,
-  .btn-review:hover,
-  .listing-card:hover {
-    transform: none;
-  }
-  
-  .carousel-prev:hover,
-  .carousel-next:hover {
-    transform: translateY(-50%);
-  }
 }
